@@ -1,0 +1,8 @@
+---
+security_group_rules:
+  - proto: tcp
+    ports: 22
+    cidr_ip: "0.0.0.0/0"
+  - proto: tcp
+    ports: 443
+    cidr_ip: "0.0.0.0/0"

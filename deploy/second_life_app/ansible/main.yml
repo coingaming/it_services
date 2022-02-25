@@ -1,0 +1,14 @@
+---
+- name: Localhost provisioning
+  hosts: localhost
+  remote_user: "{{ iam_user }}"
+  roles:
+    - aws_infrastructure_provisioning
+    - ec2_instance_provisioning
+
+- name: Production provisioning
+  hosts: production
+  remote_user: ubuntu
+  become: true
+  roles:
+    - webserver_provisioning

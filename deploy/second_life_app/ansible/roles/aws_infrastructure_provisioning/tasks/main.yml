@@ -1,0 +1,73 @@
+---
+  - name: Create Amazon Virtual Private Cloud (VPC)
+    ec2_vpc_net:
+      aws_access_key: "{{ aws_access_key }}"
+      aws_secret_key: "{{ aws_secret_key }}"
+      region: "{{ aws_region }}"
+      cidr_block: 10.10.0.0/16
+      name: "{{ vpc_name }}"
+      tags:
+        Name: "{{ vpc_name }}"
+      tenancy: default
+    register: ansibleVPC
+
+  - name: Сreate internet gateway for the VPC
+    ec2_vpc_igw:
+      aws_access_key: "{{ aws_access_key }}"
+      aws_secret_key: "{{ aws_secret_key }}"
+      region: "{{ aws_region }}"
+      state: present
+      vpc_id: "{{ ansibleVPC.vpc.id }}"
+      tags:
+        Name: "{{ vpc_igw_tag_name }}"
+    register: ansibleVPC_igw
+
+  - name: Сreate a public subnet for the region "{{ aws_region }}"
+    ec2_vpc_subnet:
+      aws_access_key: "{{ aws_access_key }}"
+      aws_secret_key: "{{ aws_secret_key }}"
+      region: "{{ aws_region }}"
+      state: present
+      cidr: 10.10.0.0/16
+      vpc_id: "{{ ansibleVPC.vpc.id }}"
+      map_public: yes
+      tags:
+        Name: "{{ vpc_subnet_tag_name }}"
+    register: public_subnet
+
+  - name: Сreate a new route table for public subnet
+    ec2_vpc_route_table:
+      aws_access_key: "{{ aws_access_key }}"
+      aws_secret_key: "{{ aws_secret_key }}"
+      region: "{{ aws_region }}"
+      state: present
+      vpc_id: "{{ ansibleVPC.vpc.id }}"
+      tags:
+        Name: "{{ vpc_route_table_tag_name }}"
+      subnets:
+        - "{{ public_subnet.subnet.id }}"
+      routes:
+        - dest: 0.0.0.0/0
+          gateway_id: "{{ ansibleVPC_igw.gateway_id }}"
+    register: rt_ansibleVPC_PublicSubnet
+
+  - name: Сreate security group
+    ec2_group:
+      aws_access_key: "{{ aws_access_key }}"
+      aws_secret_key: "{{ aws_secret_key }}"
+      region: "{{ aws_region }}"
+      description: "{{ ec2_group_description }}"
+      name: "{{ ec2_group_name }}"
+      vpc_id: "{{ ansibleVPC.vpc.id }}"
+      tags:
+        Name: "{{ ec2_group_tag_name }}"
+      rules: "{{ security_group_rules }}"
+    register: slack_app_sg
+
+  - name: Set Security Group Id in variable
+    set_fact:
+      group_id: "{{ slack_app_sg.group_id }}"
+
+  - name: Set Public subnet Id in variable
+    set_fact:
+      vpc_subnet_id: "{{ public_subnet.subnet.id }}"

@@ -1,0 +1,11 @@
+---
+vpc_name: "[IT services] VPC"
+vpc_tag_name: "[IT services] VPC"
+
+vpc_igw_tag_name: "[IT services] VPC Gateway"
+vpc_subnet_tag_name: "[IT services] VPC public subnet"
+vpc_route_table_tag_name: "[IT services] VPC route table"
+
+ec2_group_name: "[IT services] EC2 Security Group"
+ec2_group_tag_name: "[IT services] EC2 Security Group"
+ec2_group_description: "[IT services] EC2 Security Group"

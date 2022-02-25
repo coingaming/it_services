@@ -1,0 +1,20 @@
+---
+user_groups:
+  - development
+  - devops
+
+user_info: [
+  {
+     name: 'vladislav_kislitsyn', 
+     ssh_key_dest: '~/.ssh/ec2_keypair.pub',
+     group: development,
+     file_ssh_key: .ssh/ec2_keypair,
+     type_ssh_key: rsa
+  },
+  {
+     name: 'indrek_truu', 
+     key: '~/.ssh/ec2_keypair.pub', 
+     state: 'present',
+     group: devops
+  }
+]
