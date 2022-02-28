@@ -8,11 +8,18 @@ Launch command to encrypt distinct value:
 ```sh
 ansible-vault encrypt_string --vault-password-file=a_password_file 'password' --name 'name_of_variable'
 ```
-Launch command to start provisioning and related tasks:
+
+## Launching provisioning roles
 
 ```sh
 ansible-playbook --vault-password-file=a_password_file main.yml
 ```
+
+## Launching cleanup role
+```sh
+ansible-playbook delete-EC2-testbed.yml -v --extra-vars "delete=true"
+```
+Set variable to true in order to delete all aws resources (gateway, subnet, route table, vpc) along with ec2 instance
 
 # Resourses Management Rules
 ## Tags
