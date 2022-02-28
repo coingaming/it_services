@@ -1,3 +1,2 @@
 ---
-image_id: ami-0f4faa55119c17cdc
-ssh_keyname: it_services_ec2_keypair
+image_id: ami-0f760bb35b3fb7df1

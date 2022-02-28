@@ -1,4 +1,7 @@
 ---
+subnet_sidr: 10.10.0.0/16
+ec2_group_description: production firewall for EC2 serving slack apps 
+
 security_group_rules:
   - proto: tcp
     ports: 22

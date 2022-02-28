@@ -1,0 +1,5 @@
+- name: Delete AWS VPC
+  amazon.aws.ec2_vpc_net:
+    name: "{{ vpc_name }}"
+    region: "{{ ec2_region }}"
+    state: absent

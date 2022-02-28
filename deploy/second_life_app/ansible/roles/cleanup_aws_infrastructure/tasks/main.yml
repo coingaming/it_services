@@ -1,0 +1,25 @@
+---
+  - name: Delete EC2 instance
+    ec2_instance:
+      region: "{{ ec2_region }}"
+      state: absent
+      filters:
+        instance-state-name: running
+        "tag:Name": "{{ ec2_name }}"
+
+  # ansible-playbook delete-EC2-testbed.yml -v --extra-vars "delete=true"
+  - name: Grab VPC details
+    ec2_vpc_net_info:
+    region: "{{ ec2_region }}"
+    filters:
+      "tag:Name": "{{ vpc_name }}"
+    register: vpc_info
+
+  - name: Delete AWS Resources
+    include_tasks: "{{ item }}.yaml"
+    loop:
+      - delete_igw
+      - delete_subnet
+      - delete_security_group
+      - delete_vpc
+    when: delete | bool

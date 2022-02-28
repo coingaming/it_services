@@ -4,7 +4,7 @@
       aws_access_key: "{{ aws_access_key }}"
       aws_secret_key: "{{ aws_secret_key }}"
       name: "{{ ssh_keyname }}"
-      region: "{{ aws_region }}"
+      region: "{{ ec2_region }}"
     register: ec2_key_result
 
   - name: ec2 key result
@@ -22,7 +22,7 @@
     ec2_ami_info:
       aws_access_key: "{{ aws_access_key }}"
       aws_secret_key: "{{ aws_secret_key }}"
-      region: "{{ aws_region }}"
+      region: "{{ ec2_region }}"
       owners: 099720109477 # Canonical
       filters:
         architecture: x86_64
@@ -39,7 +39,7 @@
     ec2:
       aws_access_key: "{{ aws_access_key }}"
       aws_secret_key: "{{ aws_secret_key }}"
-      region: "{{ aws_region }}"
+      region: "{{ ec2_region }}"
       image: "{{ image_id }}"
       instance_type: t2.micro
       key_name: "{{ ssh_keyname }}"
@@ -50,7 +50,9 @@
       vpc_subnet_id: "{{ vpc_subnet_id }}"
       assign_public_ip: yes
       instance_tags:
-        Name: "{{ ec2_instance_tag_name }}"
+        Owner: "{{ owner }}"
+        Stack: "{{ stack }}"
+        Name: "{{ ec2_name }}"
     register: ec2_info
 
   - name: Add host to production group

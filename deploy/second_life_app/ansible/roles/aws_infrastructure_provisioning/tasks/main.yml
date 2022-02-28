@@ -3,10 +3,11 @@
     ec2_vpc_net:
       aws_access_key: "{{ aws_access_key }}"
       aws_secret_key: "{{ aws_secret_key }}"
-      region: "{{ aws_region }}"
+      region: "{{ ec2_region }}"
       cidr_block: 10.10.0.0/16
       name: "{{ vpc_name }}"
       tags:
+        Owner: "{{ owner }}"
         Name: "{{ vpc_name }}"
       tenancy: default
     register: ansibleVPC
@@ -15,35 +16,41 @@
     ec2_vpc_igw:
       aws_access_key: "{{ aws_access_key }}"
       aws_secret_key: "{{ aws_secret_key }}"
-      region: "{{ aws_region }}"
+      region: "{{ ec2_region }}"
       state: present
       vpc_id: "{{ ansibleVPC.vpc.id }}"
       tags:
-        Name: "{{ vpc_igw_tag_name }}"
+        Stack: "{{ stack }}"
+        Owner: "{{ owner }}"
+        Name: "{{ gateway_name }}"
     register: ansibleVPC_igw
 
-  - name: Сreate a public subnet for the region "{{ aws_region }}"
+  - name: Сreate a public subnet for the region "{{ ec2_region }}"
     ec2_vpc_subnet:
       aws_access_key: "{{ aws_access_key }}"
       aws_secret_key: "{{ aws_secret_key }}"
-      region: "{{ aws_region }}"
+      region: "{{ ec2_region }}"
       state: present
       cidr: 10.10.0.0/16
       vpc_id: "{{ ansibleVPC.vpc.id }}"
       map_public: yes
       tags:
-        Name: "{{ vpc_subnet_tag_name }}"
+        Stack: "{{ stack }}"
+        Owner: "{{ owner }}"
+        Name: "{{ subnet_name }}"
     register: public_subnet
 
   - name: Сreate a new route table for public subnet
     ec2_vpc_route_table:
       aws_access_key: "{{ aws_access_key }}"
       aws_secret_key: "{{ aws_secret_key }}"
-      region: "{{ aws_region }}"
+      region: "{{ ec2_region }}"
       state: present
       vpc_id: "{{ ansibleVPC.vpc.id }}"
       tags:
-        Name: "{{ vpc_route_table_tag_name }}"
+        Stack: "{{ stack }}"
+        Owner: "{{ owner }}"
+        Name: "{{ route_name }}"
       subnets:
         - "{{ public_subnet.subnet.id }}"
       routes:
@@ -55,12 +62,14 @@
     ec2_group:
       aws_access_key: "{{ aws_access_key }}"
       aws_secret_key: "{{ aws_secret_key }}"
-      region: "{{ aws_region }}"
+      region: "{{ ec2_region }}"
       description: "{{ ec2_group_description }}"
-      name: "{{ ec2_group_name }}"
+      name: "{{ security_group_name }}"
       vpc_id: "{{ ansibleVPC.vpc.id }}"
       tags:
-        Name: "{{ ec2_group_tag_name }}"
+        Stack: "{{ stack }}"
+        Owner: "{{ owner }}"
+        Name: "{{ security_group_name }}"
       rules: "{{ security_group_rules }}"
     register: slack_app_sg
 

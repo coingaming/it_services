@@ -20,7 +20,6 @@ aws_password: !vault |
           30356431313739646164376131303862366132663535376166323738323832316562386564643030
           6461636364363633360a363366333230623636346234303134663464303235646137353438383238
           3066
-
 iam_user: !vault |
           $ANSIBLE_VAULT;1.1;AES256
           64393566346565656532323734333839383533363434366330613836613131373133326637363533
@@ -29,7 +28,21 @@ iam_user: !vault |
           6664373538653430610a626462353734383238303431613932663065313933303264313761323764
           66623533633861396232303434666338393431383964326636643135646337653036
 
-aws_region: us-east-2
+ec2_region: eu-central-1
+
+# common tags:
+owner: it_services
+stack: production
+
+# tag resources names
+vpc_name: shared.vpc.techops
+gateway_name: prod.gw.techops
+subnet_name: prod.app.public-sn.slack_services
+route_name: prod.app.rt.slack_services
+security_group_name: prod.app.sg.slack_services
+ec2_name: prod.app.ec2.second_life_slack_bot
+
+ssh_keyname: it_services_ec2_keypair
 
 # generated in role aws_infrastructure_provisioning
 group_id:
