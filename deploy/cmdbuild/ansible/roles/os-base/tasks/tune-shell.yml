@@ -1,0 +1,10 @@
+- name: "tune-shell"
+  copy:
+    dest: "/etc/profile.d/aliases-add.sh"
+    content: |
+      #!/bin/sh
+
+      export HISTCONTROL=ignoreboth:erasedups
+      export HISTTIMEFORMAT="[%F %T] "
+      export HISTFILE=~/.bash_eternal_history
+      export PROMPT_COMMAND="history -a; $PROMPT_COMMAND"

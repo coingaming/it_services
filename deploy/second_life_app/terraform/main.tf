@@ -16,15 +16,15 @@ locals {
   offices_ips = "81.20.149.200/32,35.158.4.35/32"
 }
 
-resource "aws_key_pair" "sl-bot-srv_user" {
-  key_name   = "${local.env}-itruu"
-  public_key = "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQCRNIDR2lngvOanxAlrqJVCchBHajYuqvCo3XGf58DNB+bG8SLWJeg//YJYeVfdN9m2iHRmv8/LQxw9ehvt3at2pVntnGyabSfmyOfrmPfxsLCdZl3JmX7wz+fKLwB1N+7jDzY2MFdW7Iqq37hfvWbq5g0zWTQ8+ZqjuCA691izF4F4SJ1PDNJkStqIsOZv3qVN9mg84bOYycxIqh0oTqC9U0HpbOMSMJHPMQ8+wGmAOsnO00axxvoHMrA88CNVBy39qJd3KO/dVkVCQ3RwLo3vuDb3+3uwh2GaWLRMG1NXl8k3Yfv6Zip8DvM1YJpntrtVve55ttyUsSLNmF8hHxut ${local.env}-itruu"
-}
-
 #resource "aws_key_pair" "sl-bot-srv_user" {
-#  key_name   = "${local.env}-vladislav"
-#  public_key = "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQC2lPhGI/etrPGqx/1ewboeNiKFmFFlVlOddp4kYx5cwZajQztLNgMal8xlIVgw2nSxCqCzj0YPkLJ95W9CBA0TM5PFvAUPFE1tSd37Ofs3nX/WKsTXQ8JbjmjCE0IUoj5Zfc2eDS39q6HVGZGZPrODkhDEzfsDbQHoU5zGoVX7aPzmND+J2Deln+PXaLVsjochyPxCHDkMF6in/2aApm5Hdpt76b/5iK+Gg2k77MKRvxma/beBHRYeZBGeedXqVj6Xo6CESSEMcwWpb5Tz3zewiIfVPV5JRsk4aoWw9AsAmvGpmoYeIAYWJ8jXyQA2HtAn8WCFEw7uWeWev3Q5/u51UGrt8HQmYPYn6Hft2spa0/SWDmjiGykBi1vYEYf0Liijg1+oX0uzYRwNHUiAdopzlwfhh2GJh39TMCOxMMY26R0nhIZMw7ZeK7trVhOrKFWCtWz0+32yMeErxn1H31hVmwDMcStFi5ySM4E7A7dUjqlYZNvyVEjd6qhVwy7zMi0= ${local.env}-vladislav"
+#  key_name   = "${local.env}-itruu"
+#  public_key = "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQCRNIDR2lngvOanxAlrqJVCchBHajYuqvCo3XGf58DNB+bG8SLWJeg//YJYeVfdN9m2iHRmv8/LQxw9ehvt3at2pVntnGyabSfmyOfrmPfxsLCdZl3JmX7wz+fKLwB1N+7jDzY2MFdW7Iqq37hfvWbq5g0zWTQ8+ZqjuCA691izF4F4SJ1PDNJkStqIsOZv3qVN9mg84bOYycxIqh0oTqC9U0HpbOMSMJHPMQ8+wGmAOsnO00axxvoHMrA88CNVBy39qJd3KO/dVkVCQ3RwLo3vuDb3+3uwh2GaWLRMG1NXl8k3Yfv6Zip8DvM1YJpntrtVve55ttyUsSLNmF8hHxut ${local.env}-itruu"
 #}
+
+resource "aws_key_pair" "sl-bot-srv_user" {
+  key_name   = "ec2_keypair"
+  public_key = "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQC2lPhGI/etrPGqx/1ewboeNiKFmFFlVlOddp4kYx5cwZajQztLNgMal8xlIVgw2nSxCqCzj0YPkLJ95W9CBA0TM5PFvAUPFE1tSd37Ofs3nX/WKsTXQ8JbjmjCE0IUoj5Zfc2eDS39q6HVGZGZPrODkhDEzfsDbQHoU5zGoVX7aPzmND+J2Deln+PXaLVsjochyPxCHDkMF6in/2aApm5Hdpt76b/5iK+Gg2k77MKRvxma/beBHRYeZBGeedXqVj6Xo6CESSEMcwWpb5Tz3zewiIfVPV5JRsk4aoWw9AsAmvGpmoYeIAYWJ8jXyQA2HtAn8WCFEw7uWeWev3Q5/u51UGrt8HQmYPYn6Hft2spa0/SWDmjiGykBi1vYEYf0Liijg1+oX0uzYRwNHUiAdopzlwfhh2GJh39TMCOxMMY26R0nhIZMw7ZeK7trVhOrKFWCtWz0+32yMeErxn1H31hVmwDMcStFi5ySM4E7A7dUjqlYZNvyVEjd6qhVwy7zMi0= vladislav@vladislav-ThinkPad-P15v-Gen-2i"
+}
 
 
 resource "aws_eip" "sl-bot-srv_eip" {
@@ -70,7 +70,6 @@ module "sl-bot-srv_ec2" {
   subnet_id                   = module.sl-bot-srv_vpc.public_subnets[0]
   private_ips                 = ["172.21.0.15"]
   associate_public_ip_address = true
-
   vpc_security_group_ids = [module.sl-bot-srv_security_group.this_security_group_id]
 
   root_block_device = [

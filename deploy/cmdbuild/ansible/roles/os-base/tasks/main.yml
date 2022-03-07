@@ -1,0 +1,13 @@
+---
+- include_tasks:
+    file: tune-shell.yml
+    apply:
+      tags: tune-shell
+  tags: tune-shell
+
+- include_tasks:
+    file: dist-upgrade.yml
+    apply:
+      tags: dist-upgrade
+  tags:
+    - dist-upgrade

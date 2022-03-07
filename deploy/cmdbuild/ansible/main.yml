@@ -1,0 +1,9 @@
+- hosts: production
+  become: yes
+  become_user: root
+  roles:
+    - role: os-base
+      tags: os-base
+
+    - role: cmdbuild-proxy
+      tags: proxy

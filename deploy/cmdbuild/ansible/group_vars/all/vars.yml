@@ -1,0 +1,9 @@
+# use no for real runs, yes to enable dryrun for testing
+ansible_ignore_errors: "no"
+
+
+## nginx
+country_name: EE
+organization_name: Heathmont
+email_address: admin@heathmont.net
+common_name: idm.heathmont.net

@@ -1,0 +1,14 @@
+- name: Upgrade all packages
+  apt:
+    update_cache: yes
+    upgrade: full
+    autoremove: yes
+
+- name: Reboot after package upgrade
+  reboot:
+
+- name: Run do-release-upgrade non-interactively
+  command: do-release-upgrade -f DistUpgradeViewNonInteractive
+
+- name: Reboot after release-upgrade
+  reboot:

@@ -1,10 +1,14 @@
----
 - name: Localhost provisioning
   hosts: localhost
-  remote_user: "{{ iam_user }}"
-  roles:
-    - aws_infrastructure_provisioning
-    - ec2_instance_provisioning
+  tasks:
+    - name: Create production group
+      add_host:
+        name: "{{ ec2_public_ip }}"
+        groups: production
+    - name: Create ssh-key pair
+      ec2_key:
+        name: aws_key_pair.sl-bot-srv_user.ec2_keypair
+        key_material: 'ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQC2lPhGI/etrPGqx/1ewboeNiKFmFFlVlOddp4kYx5cwZajQztLNgMal8xlIVgw2nSxCqCzj0YPkLJ95W9CBA0TM5PFvAUPFE1tSd37Ofs3nX/WKsTXQ8JbjmjCE0IUoj5Zfc2eDS39q6HVGZGZPrODkhDEzfsDbQHoU5zGoVX7aPzmND+J2Deln+PXaLVsjochyPxCHDkMF6in/2aApm5Hdpt76b/5iK+Gg2k77MKRvxma/beBHRYeZBGeedXqVj6Xo6CESSEMcwWpb5Tz3zewiIfVPV5JRsk4aoWw9AsAmvGpmoYeIAYWJ8jXyQA2HtAn8WCFEw7uWeWev3Q5/u51UGrt8HQmYPYn6Hft2spa0/SWDmjiGykBi1vYEYf0Liijg1+oX0uzYRwNHUiAdopzlwfhh2GJh39TMCOxMMY26R0nhIZMw7ZeK7trVhOrKFWCtWz0+32yMeErxn1H31hVmwDMcStFi5ySM4E7A7dUjqlYZNvyVEjd6qhVwy7zMi0= vladislav@vladislav-ThinkPad-P15v-Gen-2i'
 
 - name: Production provisioning
   hosts: production

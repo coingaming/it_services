@@ -37,8 +37,15 @@
 
 - name: Create and start services
   environment:
+    - EMAIL: "{{ acme_email }}"
+    - CERT_RESOLVER: "{{ tls_certresolver }}"
+    - TRAEFIK_USER: "{{ traefik_user }}"
+    - TRAEFIK_PASSWORD_HASH: "{{ traefik_password }}"
+    - DOMAIN: "{{ domain }}"
     - BOT_SLACK_TOKEN: "{{ bot_slack_token }}"
     - APP_SLACK_TOKEN: "{{ app_slack_token }}"
     - SIGNING_SLACK_SECRET: "{{ signing_slack_secret }}"
   docker_compose:
     project_src: "{{ application_path }}"
+    #state: absent
+    #remove_images: all

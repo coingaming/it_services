@@ -29,6 +29,7 @@ iam_user: !vault |
           66623533633861396232303434666338393431383964326636643135646337653036
 
 ec2_region: eu-central-1
+ec2_public_ip: 3.72.22.253
 
 # common tags:
 owner: it_services
@@ -47,6 +48,3 @@ ssh_keyname: it_services_ec2_keypair
 # generated in role aws_infrastructure_provisioning
 group_id:
 vpc_subnet_id:
-
-# generated in role ec2_instance_provisioning
-ec2_public_ip:
