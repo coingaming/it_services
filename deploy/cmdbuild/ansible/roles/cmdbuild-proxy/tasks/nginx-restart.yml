@@ -1,7 +1,0 @@
----
-- name: nginx-restart | Restart nginx server with new configuration
-  service:
-    name: nginx
-    state: restarted
-  become: true
-

@@ -1,0 +1,7 @@
+all:
+  vars:
+    ansible_user: ubuntu
+  hosts:
+    prod-cmdbuild-app:
+      ansible_host: 
+      ansible_ssh_private_key_file:

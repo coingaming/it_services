@@ -1,0 +1,23 @@
+---
+- name: nginx-cert | Generate certificate for HTTPS 
+  block:
+    - name: nginx-cert | Generate keypair (1/3)
+      openssl_privatekey:
+        path: /etc/nginx/x-cmdbuild.key
+        size: 2048
+    - name: nginx-cert | Generate CSR (2/3)
+      openssl_csr:
+        path: /etc/nginx/x-cmdbuild.csr
+        privatekey_path: /etc/nginx/x-cmdbuild.key
+        country_name: "{{ country_name }}"
+        organization_name: "{{ organization_name }}"
+        email_address: "{{ email_address }}"
+        common_name: "{{ common_name }}"
+    - name: nginx-cert | Generate self-signed cert (3/3)
+      openssl_certificate:
+        path: /etc/nginx/x-cmdbuild.crt
+        privatekey_path: /etc/nginx/x-cmdbuild.key
+        csr_path: /etc/nginx/x-cmdbuild.csr
+        provider: selfsigned
+  become: true
+  ignore_errors: "{{ ansible_ignore_errors }}" # nginx

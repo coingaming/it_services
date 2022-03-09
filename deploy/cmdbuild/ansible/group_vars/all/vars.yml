@@ -7,3 +7,11 @@ country_name: EE
 organization_name: Heathmont
 email_address: admin@heathmont.net
 common_name: idm.heathmont.net
+
+
+## rds
+postgresql_login_host:
+postgresql_port: 5432
+
+## cmdbuild
+web_app_archive_url: https://sourceforge.net/projects/cmdbuild/files/ready2use-2.2/Core%20updates/ready2use-2.2-3.4/ready2use-2.2-3.4.war

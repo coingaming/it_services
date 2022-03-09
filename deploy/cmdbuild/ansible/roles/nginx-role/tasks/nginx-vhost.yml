@@ -1,0 +1,9 @@
+---
+- name: nginx-vhost | Add nginx vhost conf (replace default in sites-available)
+  template:
+    src: midpoint.conf.j2
+    dest: /etc/nginx/sites-available/default
+    owner: root
+    group: root
+    mode: '0644'
+  become: true

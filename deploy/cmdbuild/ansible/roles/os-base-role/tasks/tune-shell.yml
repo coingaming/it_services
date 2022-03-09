@@ -1,0 +1,21 @@
+- name: "tune-shell"
+  copy:
+    dest: "/etc/profile.d/aliases-add.sh"
+    content: |
+      #!/bin/sh
+
+      export HISTCONTROL=ignoreboth:erasedups
+      export HISTTIMEFORMAT="[%F %T] "
+      export HISTFILE=~/.bash_eternal_history
+      export PROMPT_COMMAND="history -a; $PROMPT_COMMAND"
+      
+      alias rtfl='tail -F /opt/midpoint/current/var/log/midpoint.log'
+      alias rtfl2='tail -F /data/logs/*'
+
+      alias gh='history | grep'
+      
+      csview()
+      {
+      local file="$1"
+      sed "s/,/\t/g" "$file" | less -S
+      }

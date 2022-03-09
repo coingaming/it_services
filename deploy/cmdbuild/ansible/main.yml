@@ -1,9 +1,19 @@
-- hosts: production
+---
+- hosts: prod-cmdbuild-app
   become: yes
   become_user: root
   roles:
-    - role: os-base
+    - role: os-base-role
       tags: os-base
 
-    - role: cmdbuild-proxy
-      tags: proxy
+    - role: nginx-role
+      tags: nginx
+
+    - role: java-role
+      tags: java
+
+    - role: service-role
+      tags: service
+
+    - role: tomcat-role
+      tags: tomcat

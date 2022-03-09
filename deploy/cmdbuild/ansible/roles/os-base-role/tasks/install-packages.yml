@@ -1,0 +1,39 @@
+---
+- name: install-packages | Installing https transport for apt
+  apt:
+    name: apt-transport-https
+    state: present
+    update_cache: yes
+
+- name: install-packages | Adding apt key for repository
+  apt_key:
+    url: "{{ item.url }}"
+    state: present
+  with_items: "{{ packages_repositories_apt }}"
+  when: item.url is defined
+
+- name: install-packages | Adding apt repository
+  apt_repository:
+    repo: "{{ item.string }}"
+    state: present
+  with_items: "{{ packages_repositories_apt }}"
+
+- name: install-packages | Updating apt cache
+  apt:
+    update_cache: yes
+
+- name: install-packages | Install apt packages
+  apt:
+    name: "{{ item.name }}"
+    state: "{{ item.state | default('present') }}"
+  with_items: "{{ packages_list_apt }}"
+  ignore_errors: "{{ ansible_ignore_errors }}" # apt repo's
+  tags: ft
+
+- name: install-packages | Install pip packages
+  pip:
+    name: "{{ item.name }}"
+    state: "{{ item.state | default('present') }}"
+  with_items: "{{ packages_list_pip }}"
+  ignore_errors: "{{ ansible_ignore_errors }}" # pip3
+  tags: ft

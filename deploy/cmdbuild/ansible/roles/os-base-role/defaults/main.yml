@@ -1,0 +1,22 @@
+---
+## install-packages
+packages_repositories_apt:
+  - { url: 'https://packages.microsoft.com/keys/microsoft.asc', string: 'deb [arch=amd64] https://packages.microsoft.com/ubuntu/{{ ansible_lsb.release }}/prod {{ ansible_lsb.codename }} main' }
+  - { url: 'https://www.postgresql.org/media/keys/ACCC4CF8.asc', string: 'deb http://apt.postgresql.org/pub/repos/apt {{ ansible_lsb.codename }}-pgdg main' }
+
+packages_list_apt:
+  - name: mc                        # troubleshooting
+  - name: zip                       # troubleshooting, to support mcedit within ZIP
+  - name: jq                        # troubleshooting, JSON CLI viewer
+  - name: csvtool                   # troubleshooting, CSV CLI viewer
+  - name: csvkit                    # troubleshooting, CSV CLI viewer
+  - name: postgresql-client-12      # postgre mgmt
+  - name: pgcli                     # postgre mgmt
+  - name: python3-pip               # app connectors
+  - name: nginx                     # proxy
+  - name: incron                    # notifications
+  - name: inotify-tools             # troubleshooting, file monitor
+
+packages_list_pip:
+  - name: psycopg2                  # ansible: postgre mgmt
+  - name: lxml                      # ansible: postgre mgmt
