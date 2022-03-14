@@ -4,7 +4,7 @@ from typing import NoReturn, List, Dict, Optional
 from functools import partial
 from .async_app import SecondlifeBotApp
 from .utils import create_image_direct_url, get_file_id
-from .settings import APP_SLACK_TOKEN
+from .settings import APP_SLACK_TOKEN, BOT_SLACK_TOKEN
 from .ui import get_item_ad_blocks, get_stuff_specification_view, get_ad_confirmation_blocks, get_message_blocks, \
 	change_item_price_view, get_home_tab_view
 from .constants import AD_VIEW_INDENTS, POST_MESSAGES, BUTTON_ACTION_IDS, VIEW_IDS, \
@@ -22,7 +22,7 @@ def setup_requests_handlers(app: SecondlifeBotApp, config: Dict) -> NoReturn:
 	# actions:
 	# - change price
 	# - create advertisment
-	# - delete item im age preview
+	# - delete item image preview
 	# - buy an item
 	# - mark item as sold
 	# - show more item photos
@@ -277,12 +277,11 @@ def action_handlers(app: SecondlifeBotApp, config: Dict=None) -> NoReturn:
 
 		await ack()
 		logger.info(f"User: {body['user']['id']} pushed button: {BUTTON_ACTION_IDS.CREATE_ADVERTISMENT}")
-
-		channel: str = body['channel']['id']
-		timestamp: str = body['message']['ts']
+		channel_id: str = body['channel']['id']
+		buttons_panel_ts: str = body['message']['ts']
 		trigger_id: str = body["trigger_id"]
-		file_id: str = body['actions'][0]['value'] # todo remove hardcode, get value by action_id
-
+		state: str = body['actions'][0]['value'] # todo remove hardcode, get value by action_id
+		message_ts, file_id = state.split('-')
 		# todo remove extra API call (call API twice)
 		file_info: Dict = await client.files_info(
 			token=APP_SLACK_TOKEN,
@@ -294,9 +293,16 @@ def action_handlers(app: SecondlifeBotApp, config: Dict=None) -> NoReturn:
             trigger_id=trigger_id,
             view=specification_view
         )
+		# delete buttons panel
 		await client.chat_delete(
-			channel=channel,
-			ts=timestamp
+			channel=channel_id,
+			ts=buttons_panel_ts
+		)
+		# delete message into which file was attached
+		await client.chat_delete(
+			token=APP_SLACK_TOKEN, # user posted this message
+			channel=channel_id,
+			ts=message_ts
 		)
 
 
@@ -454,7 +460,6 @@ def commands_handlers(app: SecondlifeBotApp, config: Dict=None) -> NoReturn:
 
 def events_handlers(app: SecondlifeBotApp, config: Dict=None) -> NoReturn:
 
-
 	@app.event(EVENTS_IDS.APP_HOME_OPENED)
 	async def on_app_home_opened(ack, event, client, logger):
 
@@ -468,7 +473,7 @@ def events_handlers(app: SecondlifeBotApp, config: Dict=None) -> NoReturn:
 		tab: str = event['tab']
 		if tab == 'messages':
 			response: Dict = await client.chat_postMessage(
-				token=APP_SLACK_TOKEN,
+				token=BOT_SLACK_TOKEN,
 				channel=channel,
 				text=POST_MESSAGES.HOME_APP,
 				blocks=get_message_blocks()
@@ -477,7 +482,7 @@ def events_handlers(app: SecondlifeBotApp, config: Dict=None) -> NoReturn:
 			await asyncio.sleep(config["home_app_view_delay"])
 			message_timestamp: str = response['ts']
 			await client.chat_delete(
-				token=APP_SLACK_TOKEN,
+				token=BOT_SLACK_TOKEN,
 				channel=channel,
 				ts=message_timestamp
 			)
@@ -498,13 +503,16 @@ def events_handlers(app: SecondlifeBotApp, config: Dict=None) -> NoReturn:
 
 		await ack()
 		logger.info(f"User: {body['event']['user_id']} thrown the event: {EVENTS_IDS.FILE_SHARED}")
-
 		file_id: str = body['event']['file_id']
 		channel_id: str = body['event']['channel_id']
+		event_ts = body['event']['event_ts']
 		file_info: Dict = await client.files_info(
-			token=APP_SLACK_TOKEN,
+			token=BOT_SLACK_TOKEN,
 			file=file_id
 		)
+
+		# message timestamp into which file was attached
+		message_ts = file_info['file']['shares']['public'][channel_id][0]['ts']
 		if not file_info['file']['public_url_shared']:
 			await client.files_sharedPublicURL(
 				token=APP_SLACK_TOKEN,
@@ -513,5 +521,5 @@ def events_handlers(app: SecondlifeBotApp, config: Dict=None) -> NoReturn:
 		await client.chat_postMessage(
 			channel=channel_id,
 			text=POST_MESSAGES.ITEM_PHOTO_SHARED,
-			blocks=get_ad_confirmation_blocks(file_id)
+			blocks=get_ad_confirmation_blocks(message_ts, file_id)
 		)

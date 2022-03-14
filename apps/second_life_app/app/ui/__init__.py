@@ -86,7 +86,7 @@ def get_message_blocks() -> List:
 	]
     return blocks
 
-def get_ad_confirmation_blocks(file_id) -> List:
+def get_ad_confirmation_blocks(event_ts: str, file_id: str) -> List:
     blocks: List = [
 		{
 			"type": "actions",
@@ -99,7 +99,7 @@ def get_ad_confirmation_blocks(file_id) -> List:
 					},
 					"style": "primary",
 					"action_id": BUTTON_ACTION_IDS.CREATE_ADVERTISMENT,
-                    "value": file_id
+                    "value": f"{event_ts}-{file_id}"
 				},
 				{
 					"type": "button",
@@ -109,7 +109,7 @@ def get_ad_confirmation_blocks(file_id) -> List:
 					},
 					"style": "danger",
 					"action_id": BUTTON_ACTION_IDS.DELETE_PREVIEW_IMAGE,
-                    "value": file_id
+                    "value": f"{file_id}"
 				}
 			]
 		}
