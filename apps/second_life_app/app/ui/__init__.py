@@ -351,7 +351,7 @@ def get_item_ad_blocks(
 		"elements": [
 			{
 				"type": "plain_text",
-				"text": "Cash payments only. Returns are not accepted",
+				"text": "Returns are not accepted",
 			}
 		],
 		"block_id": BLOCK_IDS.AD_SALE_CONDITION
