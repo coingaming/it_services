@@ -12,7 +12,7 @@ ansible-vault encrypt_string --vault-password-file=a_password_file 'password' --
 ## Launching provisioning roles
 
 ```sh
-ansible-playbook --vault-password-file=a_password_file main.yml
+ansible-playbook --vault-password-file=.vault_password --inventory-file=inventory.yml main.yml
 ```
 
 ## Launching cleanup role
