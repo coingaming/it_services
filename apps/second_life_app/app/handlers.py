@@ -505,7 +505,6 @@ def events_handlers(app: SecondlifeBotApp, config: Dict=None) -> NoReturn:
 		logger.info(f"User: {body['event']['user_id']} thrown the event: {EVENTS_IDS.FILE_SHARED}")
 		file_id: str = body['event']['file_id']
 		channel_id: str = body['event']['channel_id']
-		event_ts = body['event']['event_ts']
 		file_info: Dict = await client.files_info(
 			token=BOT_SLACK_TOKEN,
 			file=file_id
