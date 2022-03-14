@@ -1,0 +1,7 @@
+all:
+  vars:
+    ansible_user: ubuntu
+  hosts:
+    prod-yolo-secondlife-app:
+      ansible_host: 3.72.22.253
+      ansible_ssh_private_key_file: ~/.ssh/ec2_keypair
