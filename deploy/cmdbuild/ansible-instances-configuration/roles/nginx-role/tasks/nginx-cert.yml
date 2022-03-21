@@ -13,6 +13,7 @@
         organization_name: "{{ organization_name }}"
         email_address: "{{ email_address }}"
         common_name: "{{ common_name }}"
+        subject_alt_name: "IP:{{ ansible_ssh_host }}"
     - name: nginx-cert | Generate self-signed cert (3/3)
       openssl_certificate:
         path: /etc/nginx/x-cmdbuild.crt
