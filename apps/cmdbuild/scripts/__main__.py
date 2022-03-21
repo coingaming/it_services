@@ -2,9 +2,10 @@
 import argparse
 from typing import Dict
 from requests import Session, Response
+from .components.domain import Domain
 
 
-def generate_session_token(session, args) -> str:
+def generate_session_token(session: Session, base_url: str, args) -> str:
 
     """
         Every request requires the user to specify in the header the field “Cmdbuild-authorization”, that
@@ -13,25 +14,20 @@ def generate_session_token(session, args) -> str:
         url: http://hostname:port/cmdbuild/services/rest/v3/sessions?scope=service&returnId=true
     """
 
-    headers: Dict = {
-        'Content-Type': 'application/json'
-    }
-    auth: Dict = {
-        "username": args.username,
-        "password": args.password,
-    }
-    url: str = f"https://{args.ip_address}/ready2use-2.2-3.4/services/rest/v3/sessions?scope=service&returnId=true"
+    path: str = "services/rest/v3/sessions?scope=service&returnId=true"
     response: Response = session.post(
-        url,
-        headers=headers,
-        verify=args.cert_path,
-        json=auth
+        f"{base_url}/{path}",
+        json={
+            "username": args.username, 
+            "password": args.password
+        }
     )
 
     response.raise_for_status()
-    responce_payload: Dict = response.json()
-    token: str = responce_payload['data']['_id']
+    response_payload: Dict = response.json()
+    token: str = response_payload['data']['_id']
     return token
+
 
 if __name__ == '__main__':
 
@@ -48,5 +44,11 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     session: Session = Session()
-    token: str = generate_session_token(session, args)
-    
+    session.verify = args.cert_path
+
+    base_url: str = f"https://{args.ip_address}/ready2use-2.2-3.4"
+    token: str = generate_session_token(session, base_url, args)
+
+    auth_header: Dict = {
+        "Cmdbuild-authorization": token
+    }
