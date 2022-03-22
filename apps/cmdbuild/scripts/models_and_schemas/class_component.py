@@ -3,7 +3,7 @@ from marshmallow import Schema, fields, validate
 from ..constants import ClassType
 
 
-class ClassComponent:
+class ClassModel:
 
     __slots__ = (
         '_id'
@@ -112,7 +112,7 @@ class ClassComponent:
     attributeGroups: List
 
 
-class ClassComponent(Schema):
+class ClassSchema(Schema):
     name = fields.String(required=True)
     description = fields.String(required=True)
     prototype = fields.Boolean(default=False) # Superclass (in cmdbuild)
@@ -164,3 +164,136 @@ class ClassComponent(Schema):
     formTriggers = fields.List()
     contextMenuItems = fields.List()
     attributeGroups = fields.List()
+
+
+class ClassAttributeModel:
+
+    __slots__ = (
+        '_id'
+        'type'
+        'name'
+        'description'
+        '_description_translation'
+        'showInGrid'
+        'showInReducedGrid'
+        'unique'
+        'mandatory'
+        'inherited'
+        'active'
+        'index'
+        'defaultValue'
+        'group'
+        '_group_description'
+        '_group_description_translation'
+        'mode'
+        'writable'
+        'immutable'
+        'hidden'
+        '_can_read'
+        '_can_create'
+        '_can_update'
+        '_can_modify'
+        'metadata'
+        'help'
+        'showIf'
+        'validationRules'
+        'autoValue'
+        'alias'
+        'syncToDmsAttr'
+        'helpAlwaysVisible'
+        'hideInFilter'
+        'virtual'
+        '_permissions'
+        'password'
+        'showPassword'
+        'textContentSecurity'
+        '_html'
+        'maxLength'
+        'multiline'
+    )
+
+    _id: str
+    type: str #
+    name: str
+    description: str
+    _description_translation: str
+    showInGrid: bool
+    showInReducedGrid: bool
+    unique: bool
+    mandatory: bool
+    inherited: bool
+    active: bool
+    index: int
+    defaultValue: Optional(str)
+    group: str
+    _group_description: str
+    _group_description_translation: str
+    mode: str
+    writable: bool
+    immutable: bool
+    hidden: bool
+    _can_read: bool
+    _can_create: bool
+    _can_update: bool
+    _can_modify: bool
+    metadata: Dict
+    help: Optional(str)
+    showIf: Optional(str)
+    validationRules: Optional(str)
+    autoValue: Optional(str)
+    alias: Optional(str)
+    syncToDmsAttr: Optional(str)
+    helpAlwaysVisible: bool
+    hideInFilter: bool
+    virtual: bool
+    _permissions: str
+    password: bool
+    showPassword: str
+    textContentSecurity: str
+    _html: bool
+    maxLength: int
+    multiline: bool
+
+
+class ClassAttributeSchema(Schema):
+    _id = fields.String()
+    type = fields.String(required=True) # lookup
+    name = fields.String(required=True)
+    description = fields.String(required=True)
+    _description_translation = fields.String()
+    showInGrid = fields.Boolean()
+    showInReducedGrid = fields.Boolean()
+    unique = fields.Boolean()
+    mandatory = fields.Boolean(default=True)
+    inherited = fields.Boolean()
+    active = fields.Boolean(default=True)
+    index = fields.Integer()
+    defaultValue = fields.String(allow_none=True)
+    group = fields.String()
+    _group_description = fields.String()
+    _group_description_translation = fields.String()
+    mode = fields.String() # lookup
+    writable = fields.Boolean()
+    immutable = fields.Boolean()
+    hidden = fields.Boolean()
+    _can_read = fields.Boolean()
+    _can_create = fields.Boolean()
+    _can_update = fields.Boolean()
+    _can_modify = fields.Boolean()
+    metadata = fields.Dictionary()
+    help = fields.String(allow_none=True)
+    showIf = fields.String(allow_none=True)
+    validationRules = fields.String(allow_none=True)
+    autoValue = fields.String(allow_none=True)
+    alias = fields.String(allow_none=True)
+    syncToDmsAttr = fields.String(allow_none=True)
+    helpAlwaysVisible = fields.Boolean()
+    hideInFilter = fields.Boolean()
+    virtual = fields.Boolean()
+    _permissions = fields.String()
+    password = fields.Boolean()
+    showPassword = fields.String()
+    textContentSecurity = fields.String()
+    _html = fields.Boolean()
+    maxLength = fields.Integer()
+    multiline = fields.Boolean()

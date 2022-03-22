@@ -1,15 +1,14 @@
-from typing import Dict, NoReturn
+from typing import Dict, NoReturn, List
 from requests import Session, Response
 
 
 class BaseComponent:
-
-
     session: Session
     base_url: str
     auth_header: str
 
-    path: str = ""
+    path = ""
+    model = None
     schema = None
 
 
@@ -51,6 +50,26 @@ class BaseComponent:
     def get_details(self, component_id: str)-> Dict:
         url: str = f"{self.base_url}/{self.path}/{component_id}"
         response: Response = self.session.get(
+            url,
+            headers=self.auth_header,
+        )
+        response.raise_for_status()
+
+
+class BaseAttribute(BaseComponent):
+    def reorder(self, attr_order: List[str]):
+        url: str = f"{self.base_url}/{self.path}/order"
+        response: Response = self.session.post(
+            url,
+            headers=self.auth_header,
+        )
+        response.raise_for_status()
+
+
+class BaseValues(BaseComponent):
+    def reorder(self, values_order: List[int]):
+        url: str = f"{self.base_url}/{self.path}/order"
+        response: Response = self.session.post(
             url,
             headers=self.auth_header,
         )
