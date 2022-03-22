@@ -1,0 +1,75 @@
+{
+    "Lookup": [
+        {
+            "name": "Service - State",
+            "values": [
+                "Active",
+                "NonActive"
+            ]
+        },
+        {
+            "name": "Service - Impact",
+            "values": [
+                "High",
+                "Medium",
+                "Low"
+            ]
+        },
+        {
+            "name": "Service - Risk",
+            "values": [
+                "High",
+                "Medium",
+                "Low"
+            ]
+        },
+        {
+            "name": "Service - Subscription Plan",
+            "values": []
+        },
+        {
+            "name": "Service - Category",
+            "values": [
+                "Core Infrastructure",
+                "Backoffice",
+                "Project management",
+                "Other",
+                "Design Tools",
+                "Testing tool",
+                "Session recording",
+                "Marketing tool",
+                "Payments",
+                "Communication",
+                "Reporting tool",
+                "Development tool",
+                "Database tool",
+                "Security",
+                "Assets",
+                "Grammar Tools",
+                "Device management",
+                "Image processing tool",
+                "Session recording",
+                "Learning",
+                "SEO Tool",
+                "Identity hub"
+            ]
+        },
+        {
+            "name": "Service - Roles",
+            "values": [
+                "admin",
+                "user",
+                "guest"
+            ]
+        }
+    ],
+
+    "Domain": [
+
+    ],
+
+    "Class": [
+
+    ]
+
+}
