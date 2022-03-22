@@ -3,7 +3,8 @@ from typing import Dict, List, NoReturn
 from .base import BaseComponent
 
 
-class Domain(BaseComponent):
+class ClassComponent(BaseComponent):
 
-    path: str = "services/rest/v3/domains"
+
+    path: str = "services/rest/v3/classes"
     schema = None
