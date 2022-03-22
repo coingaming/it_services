@@ -1,6 +1,6 @@
 from typing import List, Dict, Optional
 from marshmallow import Schema, fields, validate
-from ..constants import ClassType
+from ..constants import ClassType, ClassAttributeType
 
 
 class ClassModel:
@@ -148,7 +148,7 @@ class ClassSchema(Schema):
     _icon = fields.Integer()
     uiRouting_mode = fields.String()
     uiRouting_target = fields.String()
-    uiRouting_custom: Dict
+    uiRouting_custom = fields.Dict()
     dmsCategory = fields.String()
     noteInline = fields.Boolean()
     noteInlineClosed = fields.Boolean()
@@ -256,23 +256,23 @@ class ClassAttributeModel:
 
 
 class ClassAttributeSchema(Schema):
-    _id = fields.String()
-    type = fields.String(required=True) # lookup
     name = fields.String(required=True)
+    type = fields.String(required=True, validate=validate.OneOf(ClassAttributeType.RANGE))
     description = fields.String(required=True)
-    _description_translation = fields.String()
-    showInGrid = fields.Boolean()
-    showInReducedGrid = fields.Boolean()
     unique = fields.Boolean()
     mandatory = fields.Boolean(default=True)
     inherited = fields.Boolean()
     active = fields.Boolean(default=True)
+    _id = fields.String()
+    _description_translation = fields.String()
+    showInGrid = fields.Boolean()
+    showInReducedGrid = fields.Boolean()
     index = fields.Integer()
     defaultValue = fields.String(allow_none=True)
     group = fields.String()
     _group_description = fields.String()
     _group_description_translation = fields.String()
-    mode = fields.String() # lookup
+    mode = fields.String()
     writable = fields.Boolean()
     immutable = fields.Boolean()
     hidden = fields.Boolean()
