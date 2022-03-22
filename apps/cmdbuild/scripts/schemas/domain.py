@@ -1,6 +1,6 @@
-from email.policy import default
 from typing import List
-from marshmallow import Schema, fields
+from marshmallow import Schema, fields, validate
+from ..constants import CardinalityTypes, CascadeActionTypes
 
 
 class Domain:
@@ -83,11 +83,11 @@ class DomainSchema(Schema):
     description = fields.String(required=True)
     source = fields.String(required=True)
     destination = fields.String(required=True)
-    cardinality = fields.String(required=True)
+    cardinality = fields.String(required=True, validate=validate.OneOf(CardinalityTypes.RANGE))
     descriptionDirect = fields.String(required=True)
     descriptionInverse = fields.String(required=True)
-    cascadeActionDirect = fields.String(required=True)
-    cascadeActionInverse = fields.String(required=True)
+    cascadeActionDirect = fields.String(required=True, validate=validate.OneOf(CascadeActionTypes.RANGE))
+    cascadeActionInverse = fields.String(required=True, validate=validate.OneOf(CascadeActionTypes.RANGE))
     active = fields.Boolean(default=True)
     sources = fields.List()
     sourceProcess = fields.Boolean()
