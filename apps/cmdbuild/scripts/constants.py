@@ -41,3 +41,11 @@ class ClassAttributeType:
     TIMESTAMP: str = "dateTime" # todo set bool "Show second"
     RANGE: tuple = (BIGINTEGER, BOOLEAN, CHAR, DATE, DECIMAL, DOUBLE, FILE, FORMULA, INTEGER, IP_ADDRESS, \
         LINK, LOOKUP, LOOKUPARRAY, REFERENCE, STRING, TEXT, TIME, TIMESTAMP)
+
+
+class ClassAttributeMode:
+    EDITABLE: str = "write"
+    READ_ONLY: str = "read"
+    HIDDEN: str = "hidden"
+    IMMUTABLE: str = "immutable"
+    RANGE: tuple = (EDITABLE, READ_ONLY, HIDDEN, IMMUTABLE)
