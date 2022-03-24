@@ -65,14 +65,14 @@
     ],
     "Domain": [
         {
-            "_comment": "Employee (manager) to Employee relation",
+            "_comment": "Employee is managed by to Employee relation",
             "name": "EmplManagerEmplYolo",
             "description": "EmplManagerEmplYolo",
-            "source": "YoloEmployee",
-            "destination": "YoloEmployee",
-            "cardinality": "1:N",
-            "descriptionDirect": "is manager of",
-            "descriptionInverse": "is managed by",
+            "source": "InternalEmployeeYolo",
+            "destination": "InternalEmployeeYolo",
+            "cardinality": "N:1",
+            "descriptionDirect": "is managed by",
+            "descriptionInverse": "is manager of",
             "cascadeActionDirect": "restrict",
             "cascadeActionInverse": "restrict"
         },
@@ -80,19 +80,19 @@
             "_comment": "Employee to Organization Unit (department) relation",
             "name": "EmplToOUYolo",
             "description": "EmplToOUYolo",
-            "source": "YoloOU",
-            "destination": "YoloEmployee",
-            "cardinality": "1:N",
-            "descriptionDirect": "consists of",
-            "descriptionInverse": "belongs to",
+            "source": "InternalEmployeeYolo",
+            "destination": "OUYolo",
+            "cardinality": "N:1",
+            "descriptionDirect": "belongs to",
+            "descriptionInverse": "consists of",
             "cascadeActionDirect": "restrict",
             "cascadeActionInverse": "restrict"
         },
         {
             "_comment": "Employee (owner) to Service relation",
             "name": "EmplAdminSrvYolo",
-            "description": "YoloEmployee",
-            "source": "YoloEmployee",
+            "description": "InternalEmployeeYolo",
+            "source": "InternalEmployeeYolo",
             "destination": "YoloService",
             "cardinality": "N:N",
             "descriptionDirect": "is administrator of",
@@ -103,8 +103,8 @@
         {
             "_comment": "Employee (access) to Service relation",
             "name": "EmplAccessSrvYolo",
-            "description": "YoloEmployee",
-            "source": "YoloEmployee",
+            "description": "InternalEmployeeYolo",
+            "source": "InternalEmployeeYolo",
             "destination": "YoloService",
             "cardinality": "N:N",
             "descriptionDirect": "has access to",
@@ -135,17 +135,91 @@
             "descriptionInverse": "is paid by",
             "cascadeActionDirect": "restrict",
             "cascadeActionInverse": "restrict"
+        },
+        {
+            "_comment": "OU to Company",
+            "name": "OUToCompYolo",
+            "description": "OUToCompYolo",
+            "source": "OUYolo",
+            "destination": "InternalCompYolo",
+            "cardinality": "N:1",
+            "descriptionDirect": "belongs to",
+            "descriptionInverse": "consists of",
+            "cascadeActionDirect": "restrict",
+            "cascadeActionInverse": "restrict"
         }
     ],
-
     "Class": [
         {
-            name = fields.String(required=True)
-            description = fields.String(required=True)
-            prototype = fields.Boolean(default=False) # Superclass (in cmdbuild)
-            active = fields.Boolean(default=True)
-            parent = fields.String(default=None) # Inherits from (in cmdbuild)
-            type = fields.String(validate=validate.OneOf(ClassType.RANGE))
+            "name": "InternalEmployeeYolo",
+            "description": "InternalEmployeeYolo",
+            "type": "standard",
+            "attributes": [
+                {
+                    "name": "Id",
+                    "type": "string",
+                    "description": "id",
+                    "unique": true,
+                    "mode": "read",
+                    "maxLength": 100
+                },
+                {
+                    "name": "First Name",
+                    "type": "string",
+                    "description": "First name",
+                    "maxLength": 100
+                },
+                {
+                    "name": "Last Name",
+                    "type": "string",
+                    "description": "First name",
+                    "maxLength": 100
+                },
+                {
+                    "name": "Email",
+                    "type": "string",
+                    "description": "Email",
+                    "maxLength": 100
+                },
+                {
+                    "name": "Mobile",
+                    "type": "string",
+                    "description": "Mobile",
+                    "maxLength": 100
+                },
+                {
+                    "name": "Company",
+                    "type": "reference",
+                    "description": "Company",
+                    "domain": "OUToCompYolo"
+                },
+                {
+                    "name": "Department",
+                    "type": "reference",
+                    "description": "Department",
+                    "domain": "EmplToOUYolo"
+                },
+                {
+                    "name": "IsManager",
+                    "type": "boolean",
+                    "description": "Is Manager"
+                },
+                {
+                    "name": "DirectManager",
+                    "type": "reference",
+                    "description": "DirectManager",
+                    "domain": "EmplManagerEmplYolo"
+                },
+                {
+                    "name": "Job title",
+                    "type": "string",
+                    "description": "Mobile",
+                    "maxLength": 100
+                }
+            ]
+        },
+        {
+
         }
     ]
 
