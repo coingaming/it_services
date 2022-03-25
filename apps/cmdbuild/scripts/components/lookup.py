@@ -1,15 +1,44 @@
 
-from typing import Callable
-from apps.cmdbuild.scripts.components.base import BaseComponent, BaseValues
+from typing import Callable, Tuple, Optional
+from scripts.components.base import BaseComponent, BaseValues
+from scripts.schemas.lookup import LookupSchema
 
 
-class Lookup(BaseComponent):
-    path: str = "services/rest/v3/lookup_types"
-    model = None
-    schema = None
+class LookupModel:
+
+    schema = LookupSchema()
+
+    __slots__ = (
+        'name',
+        'attributes',
+    )
+
+    def __init__(
+        self, 
+        name: str,
+        attributes: Tuple["LookupAttributeModel"]
+    ):
+        self.name = name
+        self.attributes = attributes
 
 
-class LookupValues(BaseValues):
-    path: Callable = lambda lookupTypeId: f"services/rest/v3/lookup_types/{lookupTypeId}/values"
-    model = None
-    schema = None
+class LookupAttributeModel:
+
+    __slots__ = (
+        'code',
+        'description',
+        'active',
+        'note',
+     )
+
+    def __init__(
+        self,
+        code: str,
+        description: str,
+        active: str="true",
+        note: str="",
+    ):
+        self.code = code
+        self.description = description
+        self.active = active
+        self.note = note
