@@ -1,33 +1,9 @@
-
+import sys
+from logging import Logger, getLogger, Formatter, StreamHandler, DEBUG, INFO
 import argparse
-from typing import Dict
-from requests import Session, Response
-from .components.domain import Domain
-
-
-def generate_session_token(session: Session, base_url: str, args) -> str:
-
-    """
-        Every request requires the user to specify in the header the field “Cmdbuild-authorization”, that
-        field is a session token generated when creating a session.
-        method: post
-        url: http://hostname:port/cmdbuild/services/rest/v3/sessions?scope=service&returnId=true
-    """
-
-    path: str = "services/rest/v3/sessions?scope=service&returnId=true"
-    response: Response = session.post(
-        f"{base_url}/{path}",
-        json={
-            "username": args.username, 
-            "password": args.password
-        }
-    )
-
-    response.raise_for_status()
-    response_payload: Dict = response.json()
-    token: str = response_payload['data']['_id']
-    return token
-
+from requests import Session
+from scripts.version_updaters import update_version
+from scripts.web_clients.cmdbuild import CmdBuildWebClient
 
 if __name__ == '__main__':
 
@@ -43,12 +19,24 @@ if __name__ == '__main__':
     parser.add_argument('--cert_path', dest='cert_path', type=str, required=True)
     args = parser.parse_args()
 
+    logger: Logger = getLogger()
+    logger.setLevel(INFO)
+    handler: StreamHandler = StreamHandler(sys.stdout)
+    handler.setLevel(DEBUG)
+    formatter: Formatter = Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    handler.setFormatter(formatter)
+    logger.addHandler(handler)
+
     session: Session = Session()
     session.verify = args.cert_path
 
-    base_url: str = f"https://{args.ip_address}/ready2use-2.2-3.4"
-    token: str = generate_session_token(session, base_url, args)
+    base_url: str = f"https://{args.ip_address}/ready2use-2.2-3.4/services"
+    cmdbuild_client: CmdBuildWebClient = CmdBuildWebClient(
+        session=session,
+        base_url=base_url,
+        logger=logger
+    )
+    cmdbuild_client.path = "rest/v3/sessions?scope=service&returnId=true"
+    cmdbuild_client.generate_session_token(args.username, args.password)
 
-    auth_header: Dict = {
-        "Cmdbuild-authorization": token
-    }
+    update_version(cmdbuild_client, logger)
