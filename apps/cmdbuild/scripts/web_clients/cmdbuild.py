@@ -55,7 +55,7 @@ class CmdBuildWebClient:
         self.__logger.info(f"Authentication token is generated: {token}")
 
 
-    def create(self, component_data: Dict)-> NoReturn:
+    def create(self, component_data: Dict)-> int:
         assert self.__auth_header is not None, "Need to generate an authentication token"
         url: str = f"{self.__base_url}/{self.__path}"
         response: Response = self.__session.post(
@@ -64,6 +64,9 @@ class CmdBuildWebClient:
             json=component_data
         )
         response.raise_for_status()
+        content = response.json()
+        component_id: int = content['data']['_id']
+        return component_id
 
 
     def update(self, component_id: str, component_data: Dict)-> NoReturn:
@@ -87,7 +90,7 @@ class CmdBuildWebClient:
         response.raise_for_status()
 
 
-    def get_details(self, component_id: str)-> Dict:
+    def get_component(self, component_id: str)-> Dict:
         assert self.__auth_header is not None, "Need to generate an authentication token"
         url: str = f"{self.__base_url}/{self.__path}/{component_id}"
         response: Response = self.__session.get(
