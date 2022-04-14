@@ -1,7 +1,7 @@
 
 
 from requests import get as get_response
-from typing import Dict, Optional, Generator, Any
+from typing import Dict, Optional
 
 
 class HiBobWebClient:
@@ -10,7 +10,7 @@ class HiBobWebClient:
         self.__url = url
         self.__token = token
 
-    def pull(self, chunk_size: int = 1024, stream=True) -> Any[Generator, Dict]:
+    def pull(self, chunk_size: int = 1024, stream=True) -> Dict:
         headers: Dict = {
             "Accept": "application/json", 
             "Authorization": self.__token
