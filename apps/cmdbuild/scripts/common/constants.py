@@ -1,3 +1,9 @@
+from enum import IntEnum, auto
+from pathlib import Path, PosixPath
+
+
+PROJECT_ROOT: PosixPath = Path(__file__).parent.parent
+
 
 class CardinalityTypes:
     ONE_TO_ONE: str = "1:1"
@@ -49,3 +55,40 @@ class AttributeMode:
     HIDDEN: str = "hidden"
     IMMUTABLE: str = "immutable"
     RANGE: tuple = (EDITABLE, READ_ONLY, HIDDEN, IMMUTABLE)
+
+
+# Yolo IT service Library
+class YoloITServiceAttr(IntEnum):
+    SERVICE_NAME = 2
+    UNIQUE_ID = auto()
+    STATUS = auto()
+    OWNER_TEAM= auto()
+    OWNER = auto()
+    ROLES = auto()
+    ADMIN_ACCESS  = auto()
+    POSSIBILITY_2FA = auto()
+    FORCED_2FA = auto()
+    Lastpass_SSO = auto()
+    API_KEY_ROTATED = auto()
+    BRUTE_FORCE_PROTECTION = auto()
+    ALERTING_ADMIN_LOG = auto()
+    COMPLEX_PASSWORD = auto()
+    IP_WHITELISTED = auto()
+    CUSTOMER_TEAM = auto()
+    SLA_UPTIME = auto()
+    SLA_RESPONSE_TIME = auto()
+    SERVICE_WINDOW = auto()
+    SLA_LINK = auto()
+    DATA_CATEGORY = auto()
+    DATA_RETENTION_PERIOD = auto()
+    PRIORITY = auto()
+    RISK = auto()
+    SUBSCRIPTION_PLAN = auto()	
+    ANNUAL_COST = auto()
+    OWNER_LEGAL_BODY = auto()
+    INVOLVED_THIRD_PARTY	 = auto()
+    SERVICE_PROVIDER = auto()
+    CORPORATE_ACCOUNT_POSSIBILITY = auto()	
+    LINK = auto()
+    CATEGORY = auto()
+    DESCRIPTION  = auto()
