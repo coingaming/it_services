@@ -1,6 +1,8 @@
-from typing import Dict, NoReturn,  Optional
+from typing import Dict, NoReturn,  Optional, List
+from xmlrpc.client import Boolean
 from requests import Session, Response
 from logging import Logger
+
 
 class CmdBuildWebClient:
 
@@ -89,6 +91,31 @@ class CmdBuildWebClient:
         )
         response.raise_for_status()
 
+
+    def delete_all(self)-> Boolean:
+        assert self.__auth_header is not None, "Need to generate an authentication token"
+        url: str = f"{self.__base_url}/{self.__path}"
+        response: Response = self.__session.delete(
+            url,
+            headers=self.__auth_header,
+        )
+        response.raise_for_status()
+        content = response.json()
+        status: bool = content['success']
+        return status
+
+
+    def get_all(self) -> List:
+        assert self.__auth_header is not None, "Need to generate an authentication token"
+        url: str = f"{self.__base_url}/{self.__path}"
+        response: Response = self.__session.get(
+            url,
+            headers=self.__auth_header,
+        )
+        response.raise_for_status()
+        content = response.json()
+
+        return content['data']
 
     def get_component(self, component_id: str)-> Dict:
         assert self.__auth_header is not None, "Need to generate an authentication token"
