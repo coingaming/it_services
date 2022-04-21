@@ -179,6 +179,7 @@ class ServiceComponent:
         'Name',
         'ServiceState',
         'ServiceOwner',
+        'ServiceMasterAdmin',
         'ExtendedDescription',
     )
 
@@ -188,6 +189,7 @@ class ServiceComponent:
         name: str,
         service_state: str,
         service_owner: str,
+        serviceMasterAdmin: str,
         extended_description: str
     ):
 
@@ -195,6 +197,7 @@ class ServiceComponent:
         self.Name = name
         self.ServiceState = service_state
         self.ServiceOwner = service_owner
+        self.ServiceMasterAdmin = serviceMasterAdmin
         self.ExtendedDescription = extended_description
 
 
