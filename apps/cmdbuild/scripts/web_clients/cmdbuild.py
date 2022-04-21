@@ -9,12 +9,14 @@ class CmdBuildWebClient:
     def __init__(
         self, 
         session: Session, 
-        base_url: str, 
+        base_url: str,
+        verify: bool,
         path: Optional[str] = None,
         logger: Optional[Logger] = None,
     ):
         self.__session = session
         self.__base_url = base_url
+        self.__verify = verify
         self.__path = path
         self.__logger = logger
         self.__auth_header: Optional[Dict] = None
@@ -45,7 +47,8 @@ class CmdBuildWebClient:
             json={
                 "username": username, 
                 "password": password
-            }
+            },
+            verify=self.__verify
         )
 
         response.raise_for_status()
@@ -63,7 +66,8 @@ class CmdBuildWebClient:
         response: Response = self.__session.post(
             url,
             headers=self.__auth_header,
-            json=component_data
+            json=component_data,
+            verify=self.__verify
         )
         response.raise_for_status()
         content = response.json()
