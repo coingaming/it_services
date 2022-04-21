@@ -1,5 +1,5 @@
 ---
-- hosts: prod-cmdbuild-app
+- hosts: [prod-cmdbuild-app, test-cmdbuild-app]
   become: yes
   become_user: root
   roles:
