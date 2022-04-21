@@ -37,16 +37,18 @@ if __name__ == '__main__':
     handler.setFormatter(formatter)
     logger.addHandler(handler)
 
+    verify=args.cert_path_cmdbuild is not None
     session: Session = Session()
-    if args.cert_path_cmdbuild is not None:
+    if verify:
         session.verify = args.cert_path_cmdbuild
     base_url: str = f"https://{args.ip_cmdbuild}/ready2use-2.2-3.4/services"
     cmdbuild_client: CmdBuildWebClient = CmdBuildWebClient(
         session=session,
         base_url=base_url,
+        verify=verify,
         logger=logger
     )
     cmdbuild_client.path = "rest/v3/sessions?scope=service&returnId=true"
-    cmdbuild_client.generate_session_token(args.user_cmdbuildname, args.pass_cmdbuildword)
+    cmdbuild_client.generate_session_token(args.user_cmdbuild, args.pass_cmdbuild)
     hibob_client: HiBobWebClient = HiBobWebClient(url=args.url_hibob, token=args.token_hibob)
     update_version(hibob_client, cmdbuild_client, logger)
