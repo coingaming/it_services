@@ -39,7 +39,7 @@ class ClassModel:
 
 class ClassAttributeModel:
 
-    schema = ClassAttributeSchema()
+    schema = ClassAttributeSchema
 
     __slots__ = (
         'name',
