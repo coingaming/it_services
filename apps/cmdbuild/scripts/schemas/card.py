@@ -58,6 +58,7 @@ class ServiceCardSchema(Schema):
     Name = fields.String() #"Server Maintenance and Support"
     ServiceState = fields.String() #225
     ServiceOwner = fields.String() #6087
+    ServiceMasterAdmin = fields.String()
     ExtendedDescription = fields.String() #"Maintenance and support of server(s) and server related component(s)."
 
 
