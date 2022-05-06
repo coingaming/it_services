@@ -35,10 +35,56 @@ async def test_generate_cmdbuild_token(httpx_mock: HTTPXMock):
 
 class TestEmployeeInitialContext:
 
+    @pytest.fixture
+    def cmdbuild_employee_payload(self) -> Dict:
+        employee_payload: Dict = {
+            "success": "true",
+            "data": [
+                {
+                    "_id": 6053,
+                    "Code": "2652401818839023638",
+                    "Description": "Holding John",
+                    "Number": "IE0212",
+                    "LastName": "Holding",
+                    "FirstName": "John",
+                    "Email": "j.holding@example.com",
+                    "State": 108,
+                    "Company": 18516846,
+                    "OU": 6067,
+                    'ReportsTo': None
+                },
+                {
+                    "_id": 6087,
+                    "Code": "2572113413220074039",
+                    "Description": "Colding Conrad",
+                    "Number": "IE0212",
+                    "LastName": "Colding",
+                    "FirstName": "Conrad",
+                    "Email": "c.colding@example.com",
+                    "State": 108,
+                    "Company": 18516846,
+                    "OU": 6067,
+                    'ReportsTo': 6053
+                },
+                {
+                    "_id": 6079,
+                    "Code": "2572113575690633946",
+                    "Description": "Smith Tom",
+                    "Number": "IE0210",
+                    "LastName": "Smith",
+                    "FirstName": "Tom",
+                    "Email": "t.smith@example.com",
+                    "State": 108,
+                    "Company": 18516846,
+                    "OU": 6067,
+                    'ReportsTo': 6087
+                },
+            ],
+        }
+        return employee_payload
 
-    @pytest.mark.asyncio
-    async def test_fetch_employees_from_hr_system(self, httpx_mock: HTTPXMock):
-
+    @pytest.fixture
+    def hr_system_employee_payload(self) -> Dict:
         employee_payload: Dict = {
             'employees': [
                 # Alan Tullin
@@ -147,10 +193,31 @@ class TestEmployeeInitialContext:
                 },
             ]
         }
+        return employee_payload
+
+
+    @pytest.mark.asyncio
+    async def test_create_departments_cards(self, httpx_mock: HTTPXMock):
+        pass
+    
+    @pytest.mark.asyncio
+    async def test_create_company_cards(self, httpx_mock: HTTPXMock):
+        pass
+    
+    @pytest.mark.asyncio   
+    async def _update_employee_card(self, httpx_mock: HTTPXMock):
+        pass
+
+    @pytest.mark.asyncio
+    async def test_fetch_employees_from_hr_system(
+        self,
+        hr_system_employee_payload: Dict,
+        httpx_mock: HTTPXMock
+    ):
         httpx_mock.add_response(
             method="GET",
             url="https://api.hibob.com/v1/people?showInactive=false&includeHumanReadable=true",
-            json=employee_payload,
+            json=hr_system_employee_payload,
         )
         employee_context = EmployeeInitialContext(
             bob_token="",
@@ -159,11 +226,11 @@ class TestEmployeeInitialContext:
             cmdbuild_url="https://locahost/ready2use-2.2-3.4/services",
             bob_url="https://api.hibob.com/v1/people?showInactive=false&includeHumanReadable=true",
         )
-        employee_info_df = await employee_context._fetch_employees_from_hr_system()
+        await employee_context._fetch_employees_from_hr_system()
 
 
     @pytest.mark.asyncio
-    async def test_fetch_employees_from_cmdbuild(self, httpx_mock: HTTPXMock):
+    async def test_fetch_employees_from_cmdbuild(self, cmdbuild_employee_payload, httpx_mock: HTTPXMock):
 
         token_payload: Dict = {
             "success": True,
@@ -172,50 +239,6 @@ class TestEmployeeInitialContext:
                 "username": "admin",
                 "password": "qwerty",
             },
-        }
-        employee_payload: Dict = {
-            "success": "true",
-            "data": [
-                {
-                    "_id": 6053,
-                    "Code": "2652401818839023638",
-                    "Description": "Holding John",
-                    "Number": "IE0212",
-                    "LastName": "Holding",
-                    "FirstName": "John",
-                    "Email": "j.holding@example.com",
-                    "State": 108,
-                    "Company": 18516846,
-                    "OU": 6067,
-                    'ReportsTo': None
-                },
-                {
-                    "_id": 6087,
-                    "Code": "2572113413220074039",
-                    "Description": "Colding Conrad",
-                    "Number": "IE0212",
-                    "LastName": "Colding",
-                    "FirstName": "Conrad",
-                    "Email": "c.colding@example.com",
-                    "State": 108,
-                    "Company": 18516846,
-                    "OU": 6067,
-                    'ReportsTo': 6053
-                },
-                {
-                    "_id": 6079,
-                    "Code": "2572113575690633946",
-                    "Description": "Smith Tom",
-                    "Number": "IE0210",
-                    "LastName": "Smith",
-                    "FirstName": "Tom",
-                    "Email": "t.smith@example.com",
-                    "State": 108,
-                    "Company": 18516846,
-                    "OU": 6067,
-                    'ReportsTo': 6087
-                },
-            ],
         }
 
         customer_payload: Dict = {
@@ -255,7 +278,7 @@ class TestEmployeeInitialContext:
         httpx_mock.add_response(
             method="GET",
             url="https://locahost/ready2use-2.2-3.4/services/rest/v3/classes/InternalEmployee/cards",
-            json=employee_payload,
+            json=cmdbuild_employee_payload,
         )
 
         httpx_mock.add_response(
