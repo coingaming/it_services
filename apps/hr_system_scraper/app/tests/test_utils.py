@@ -36,7 +36,53 @@ async def test_generate_cmdbuild_token(httpx_mock: HTTPXMock):
 class TestEmployeeInitialContext:
 
     @pytest.fixture
-    def cmdbuild_employee_payload(self) -> Dict:
+    def customer_payload_cmdbuild(self) -> Dict:
+        customer_payload: Dict = {
+            "success": True,
+            "data": [
+                {
+                    "_id": 18516846,
+                    "Code": "524813",
+                    "Description": "Softline",
+                    "CompanyTitle": "Softline",
+                }
+            ],
+        }
+        return customer_payload
+
+    @pytest.fixture
+    def ou_payload_cmdbuild(self) -> Dict:
+        ou_payload: Dict = {
+            "success": True,
+            "data": [
+                {
+                    "_id": 6067,
+                    "Parent": None,
+                    "Code": "Development_1",
+                    "Notes": None,
+                    "Description": "Development",
+                    "Manager": 7887,
+                    "Company": None,
+                    "Name": "Quality Assurance",
+                },
+            ],
+        }
+        return ou_payload
+
+    @pytest.fixture
+    def auth_token_payload_cmdbuild(self) -> Dict:
+        token_payload: Dict = {
+            "success": True,
+            "data": {
+                "_id": "g1i77zdg2xxha8kn6mcoap9p",
+                "username": "admin",
+                "password": "qwerty",
+            },
+        }
+        return token_payload
+
+    @pytest.fixture
+    def employee_payload_cmdbuild(self) -> Dict:
         employee_payload: Dict = {
             "success": "true",
             "data": [
@@ -230,69 +276,34 @@ class TestEmployeeInitialContext:
 
 
     @pytest.mark.asyncio
-    async def test_fetch_employees_from_cmdbuild(self, cmdbuild_employee_payload, httpx_mock: HTTPXMock):
-
-        token_payload: Dict = {
-            "success": True,
-            "data": {
-                "_id": "g1i77zdg2xxha8kn6mcoap9p",
-                "username": "admin",
-                "password": "qwerty",
-            },
-        }
-
-        customer_payload: Dict = {
-            "success": True,
-            "data": [
-                {
-                    "_id": 18516846,
-                    "Code": "524813",
-                    "Description": "Softline",
-                    "CompanyTitle": "Softline",
-                }
-            ],
-        }
-
-        ou_payload: Dict = {
-            "success": True,
-            "data": [
-                {
-                    "_id": 6067,
-                    "Parent": None,
-                    "Code": "Development_1",
-                    "Notes": None,
-                    "Description": "Development",
-                    "Manager": 7887,
-                    "Company": None,
-                    "Name": "Quality Assurance",
-                },
-            ],
-        }
-
+    async def test_fetch_employees_from_cmdbuild(
+        self,
+        employee_payload_cmdbuild: Dict,
+        auth_token_payload_cmdbuild: Dict,
+        customer_payload_cmdbuild: Dict,
+        ou_payload_cmdbuild: Dict,
+        httpx_mock: HTTPXMock
+        ):
         httpx_mock.add_response(
             method="POST",
             url="https://locahost/ready2use-2.2-3.4/services/rest/v3/sessions?scope=service&returnId=true",
-            json=token_payload,
+            json=auth_token_payload_cmdbuild,
         )
-
         httpx_mock.add_response(
             method="GET",
             url="https://locahost/ready2use-2.2-3.4/services/rest/v3/classes/InternalEmployee/cards",
-            json=cmdbuild_employee_payload,
+            json=employee_payload_cmdbuild,
         )
-
         httpx_mock.add_response(
             method="GET",
             url="https://locahost/ready2use-2.2-3.4/services/rest/v3/classes/Customer/cards",
-            json=customer_payload,
+            json=customer_payload_cmdbuild,
         )
-
         httpx_mock.add_response(
             method="GET",
             url="https://locahost/ready2use-2.2-3.4/services/rest/v3/classes/OU/cards",
-            json=ou_payload,
+            json=ou_payload_cmdbuild,
         )
-
         employee_context = EmployeeInitialContext(
             bob_token="",
             username_cmdbuild="admin",
@@ -300,4 +311,4 @@ class TestEmployeeInitialContext:
             cmdbuild_url="https://locahost/ready2use-2.2-3.4/services",
             bob_url="https://api.hibob.com/v1/people?showInactive=false&includeHumanReadable=true",
         )
-        employee_info_df = await employee_context._fetch_employees_from_cmdbuild()
+        await employee_context._fetch_employees_from_cmdbuild()

@@ -177,7 +177,7 @@ class EmployeeInitialContext:
             *employee_fetch_result, suffixes=(bob_sfx, cmdbuild_sfx)
         )
         await asyncio.gather(
-            self.create_departments_cards(
+            self._create_departments_cards(
                 departments=prepared_employees_df["Department_bob"].unique()
             ),
             self._create_company_cards(
@@ -423,7 +423,7 @@ class EmployeeInitialContext:
             self.company_card_id_by_name[name] = card_id
             self.company_name_by_card_id[card_id] = name
 
-    async def create_departments_cards(self, departments: List):
+    async def _create_departments_cards(self, departments: List):
         """
         Creates new departments (OU) cards in CMDBuild and update related caches
         """
