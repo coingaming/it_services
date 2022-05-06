@@ -1,0 +1,10 @@
+debug: true
+cmdbuild:
+  url:
+    debug: ""
+    prod: ""
+  timeout: 15
+hr_system:
+  url:
+    debug: ""
+    prod: ""
