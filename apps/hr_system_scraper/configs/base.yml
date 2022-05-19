@@ -1,10 +1,10 @@
 debug: true
 cmdbuild:
   url:
-    debug: ""
-    prod: ""
+    debug: "https://52.49.159.189/ready2use-2.2-3.4/services"
+    prod: "https://52.213.41.20/ready2use-2.2-3.4/services"
   timeout: 15
 hr_system:
   url:
-    debug: ""
-    prod: ""
+    debug: "https://api.hibob.com/v1"
+    prod: "https://api.hibob.com/v1"

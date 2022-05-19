@@ -1,14 +1,50 @@
 import asyncio
+from multiprocessing.dummy import active_children
 import os
 import base64
 import hmac
 import hashlib
 from typing import Dict, Any, List, Tuple
-from dataclasses import make_dataclass, field, fields
-from pathlib import Path
+from dataclasses import dataclass, fields
+from pathlib import Path, PosixPath
 import yaml
 import httpx
 import pandas as pd
+
+
+PROJECT_ROOT: PosixPath = Path(__file__).parent.parent
+
+
+def get_base_url(config: Dict, system) -> Dict:
+    sys_config: Dict = config[system]
+    if config["debug"]:
+        return sys_config["url"]["debug"]
+    return sys_config["url"]["prod"]
+
+
+def get_external_systems_urls():
+    config: Dict = load_config(PROJECT_ROOT / "configs" / "base.yml")
+    cmdbuild_config: Dict = config["cmdbuild"]
+    hr_system_config: Dict = config["hr_system"]
+    cmdbuild_url: str = cmdbuild_config["url"]["debug"]
+    hr_system_url: str = hr_system_config["url"]["debug"]
+    if not config["debug"]:
+        cmdbuild_url = config["cmdbuild"]["prod"]
+        hr_system_url = config["hr_system"]["prod"]
+    return hr_system_url, cmdbuild_url
+
+
+def filter_equal(attr, value) -> str:
+    """ """
+    return {
+        "attribute":{
+            "simple":{
+                "attribute":attr,
+                "operator":"equal",
+                "value":[value]
+            }
+        }
+    }
 
 
 def load_config(path: str) -> Any:
@@ -39,119 +75,141 @@ def read_env_variable(variable: str) -> Any:
     return value
 
 
-def verify_signature(received_signature: str, payload: bytes) -> bool:
-    """
-    Helper-function to generate the signature to verify reqiest from hibob
-    """
-    webhook_secret: str = os.environ.get("BOB_SECRET_KEY")
+def generate_signature(payload: bytes) -> str:
+    webhook_secret: str = read_env_variable("BOB_SECRET_KEY")
     digest = hmac.new(webhook_secret.encode("utf-8"), payload, hashlib.sha512).digest()
     calculated_signature: str = base64.b64encode(digest).decode()
-    return hmac.compare_digest(calculated_signature, received_signature)
+    return calculated_signature
 
 
-async def make_get_request(client: httpx.AsyncClient, url: str, headers: Dict) -> Dict:
+def verify_signature(received_signature: str, payload: bytes) -> bool:
     """
-    Helper-function to make async GET request with httpx client
+    Helper-function to verify reqiest signature from hibob
     """
-    response: httpx.Response = await client.get(url, headers=headers)
-    response.raise_for_status()
-    return response.json()
+    return hmac.compare_digest(generate_signature(payload), received_signature)
 
 
-async def generate_cmdbuild_token(
-    url: str, username: str, password: str, client: httpx.AsyncClient
-) -> str:
-    """
-    Helper-function to generate authorization token
-    Every request requires the user to specify in the header the field 'Cmdbuild-authorization'
-    >>> import httpx
-    >>> import asyncio
-    >>> url: str = "https://52.49.159.189/ready2use-2.2-3.4/services"
-    >>> username: str = "admin"
-    >>> password: str = ""
-    >>> client: httpx.AsyncClient = httpx.AsyncClient(verify=False)
-    >>> token: str = asyncio.run(generate_cmdbuild_token(url, username, password, client))
-    >>> isinstance(token, str)
-    True
-    """
-    path: str = "rest/v3/sessions?scope=service&returnId=true"
-    response: httpx.Response = await client.post(
-        f"{url}/{path}", json={"username": username, "password": password}
-    )
-    response.raise_for_status()
-    response_payload: Dict = response.json()
-    token: str = response_payload["data"]["_id"]
-    return token
+@dataclass(init=True)
+class Employee:
+    first_name: str
+    middle_name: str
+    last_name: str
+    display_name: str
+    full_name: str
+    is_manager: bool
+    email: str
+    job_title: str
+    email_reports_to: str  # email of employee`s manager (used as unique ID)
+    o_u_title: str  # department name in HiBob
+    company_title: str  # company name in HiBob
+    company: int  # # REF to company card in cmdbild
+    o_u: int  # REF to department card in cmdbild
+    reports_to: int  # REF to manager card inOU_title_bob cmdbild
+    code: str  # employee ID identifier in HiBob
+    card_id: int  # employee ID identifier in Cmdbuild
+    state: str
+
+    def __init__(self, **kwargs):
+        [setattr(self, fld.name, kwargs.get(fld.name)) for fld in fields(self)]
+
+    @classmethod
+    def create_from_cmdb_dump(cls, employee_payload: Dict) -> "Employee":
+        pass  # TODO
+
+    @classmethod
+    def create_from_bob_dump(cls, employee_payload: Dict) -> "Employee":
+        match employee_payload:
+            case {
+                "internal": internal,
+                "work": {
+                    "reportsTo": reports_to,
+                },
+                "humanReadable": human_readable,
+            }:
+                # mandatory fields
+                status: str = internal["status"]
+                bob_id: str = human_readable["id"]  # PK generated by hibob
+                work_info: Dict = human_readable["work"]
+                # optional fields
+                department: str = work_info.get("department")
+                is_manager: bool = work_info.get("isManager") == "Yes"
+                job_title: str = work_info.get("title")
+                company_title: str = work_info.get("customColumns", {}).get(
+                    EmployeeInterSystemsContext.bob_custom_company_column_id
+                )
+                email_reports_to = (
+                    None if reports_to is None else reports_to["email"]
+                )  # top management may not have reports to field
+                bob_id: str = human_readable["id"]  # PK generated by hibob
+                first_name: str = human_readable.get("firstName")
+                middle_name: str = human_readable.get("middleName")
+                last_name: str = human_readable.get("surname")
+                display_name: str = human_readable.get("displayName")
+                full_name: str = human_readable.get("fullName")
+                email: str = human_readable.get("email")
+                return cls(
+                    first_name=first_name,
+                    middle_name=middle_name,
+                    last_name=last_name,
+                    display_name=display_name,
+                    full_name=full_name,
+                    is_manager=is_manager,
+                    email=email,
+                    email_reports_to=email_reports_to,
+                    job_title=job_title,
+                    o_u_title=department,
+                    company_title=company_title,
+                    code=bob_id,
+                    state=(status if status == "Active" else "Suspended"),
+                )
+
+    def prepare_cmdb_dump(self, exclude_fields: None | List = None) -> Dict:
+        # assert self.reports_to is not None, "ReportTo field should be Integer (Ref type in CMDB)"
+        # assert self.o_u is not None, "o_u field should be Integer (Ref type in CMDB)"
+        # assert self.company is not None, "ReportTo field should be Integer (Ref type in CMDB)"
+        def to_camel_case(snake_case_field: str) -> str:
+            temp = snake_case_field.split("_")
+            return temp[0].title() + "".join(ele.title() for ele in temp[1:])
+
+        dump: Dict = {}
+        for field in fields(self):
+            attr_name: str = field.name
+            attr_value = getattr(self, attr_name)
+            should_exclude_field: bool = (
+                exclude_fields is not None and attr_name in exclude_fields
+            )
+            if should_exclude_field or attr_value is None:
+                continue
+            dump[to_camel_case(attr_name)] = attr_value
+        return dump
 
 
-class EmployeeInitialContext:
+class EmployeeInterSystemsContext:
     """
     Reduces information about employees to a common denominator between 2 systems:
     hr and cmdbuild.
     We believe that the most relevant data is in the hr system.
     Public API 'prepare' fetches data from hr system and propogate all the changes to cmdbuild.
-
-    Class atrributes:
-    bob_custom_company_column_id : str
-    cmdbuild_compatible_nan : str
-
-    Instance variables:
-    cmdbuild_url: str,
-    bob_url: str,
-    cmdbuild_client: httpx.AsyncClient,
-    bob_client: httpx.AsyncClient,
-    bob_token: str,
-    _cmdbuild_token: str,
-    username_cmdbuild: str,
-    password_cmdbuild: str,
-    employee_card_id_by_email: Dict,
-    employee_email_by_card_id: Dict,
-    company_name_by_card_id: Dict,
-    company_card_id_by_name: Dict,
-    department_card_id_by_name: Dict,
-    department_name_by_card_id: Dict,
-    lock_cmdbuild_token: asyncio.Lock
-
     """
 
-    bob_custom_company_column_id: str = "column_1620839439167"
+    bob_custom_company_column_id: str = "column_1644933593840"  # "column_1620839439167"
     cmdbuild_compatible_nan: str = "nan"
-    InternalEmployee = make_dataclass(
-        "InternalEmployee",
-        [
-            ("Code", str),
-            ("FirstName", str),
-            ("MiddleName", str),
-            ("LastName", str),
-            ("DisplayName", str),
-            ("FullName", str),
-            ("IsManager", bool),
-            ("Email", str),
-            ("ReportsTo", str),
-            ("JobTitle", str),
-            ("Department", str),
-            ("Company", str),
-            ("CardId", int, field(default=None)),
-        ],
-    )
 
-    def __init__(
-        self,
-        bob_token: str,
-        username_cmdbuild: str,
-        password_cmdbuild: str,
-        cmdbuild_url: str,
-        bob_url: str,
-    ):
+    def __init__(self, bob_http_client, cmdbuild_http_client, logger):
 
-        self.cmdbuild_url: str = cmdbuild_url
-        self.bob_url: str = bob_url
-        self.cmdbuild_client: httpx.AsyncClient = httpx.AsyncClient(verify=False)
-        self.bob_client: httpx.AsyncClient = httpx.AsyncClient()
-        self.bob_token: str = bob_token
-        self._cmdbuild_token: str = None
-        self.username_cmdbuild: str = username_cmdbuild
-        self.password_cmdbuild: str = password_cmdbuild
+        self.bob_client: httpx.AsyncClient = bob_http_client
+        self.cmdbuild_client: httpx.AsyncClient = cmdbuild_http_client
+        self.logger = logger
+        self.bob_auth_header: Dict = {
+            "Accept": "application/json",
+            "Authorization": read_env_variable("BOB_TOKEN"),
+        }
+        self.cmdb_auth_header: Dict = {
+            "username": read_env_variable("USER_CMDB"),
+            "password": read_env_variable("PASS_CMDB"),
+        }
+
+        # local caches
         self.employee_card_id_by_email: Dict = {}
         self.employee_email_by_card_id: Dict = {}
         self.company_name_by_card_id: Dict = {}
@@ -159,6 +217,16 @@ class EmployeeInitialContext:
         self.department_card_id_by_name: Dict = {}
         self.department_name_by_card_id: Dict = {}
         self.lock_cmdbuild_token = asyncio.Lock()
+        self._cmdbuild_token: str = None
+
+    #########################################################################################
+    #                                   PUBLIC API                                          #
+    #########################################################################################
+
+    def clear(self):
+        self.bob_client = None
+        self.cmdbuild_client = None
+        self.logger = None
 
     async def prepare(self):
         """
@@ -168,34 +236,177 @@ class EmployeeInitialContext:
         Propogates it to cmdbuild
         """
         employee_fetch_result: List[Dict] = await asyncio.gather(
-            self._fetch_employees_from_hr_system(),
-            self._fetch_employees_from_cmdbuild(),
+            self._get_all_bob_employees(),
+            self._get_all_cmdb_employees_from_cmdb(),
         )
         bob_sfx: str = "_bob"
         cmdbuild_sfx: str = "_cmdbuild"
-        prepared_employees_df: pd.DataFrame = self._prepare_employees_info(
+        prepared_employees_df: pd.DataFrame = self._prepare_employees_info_dataframe(
             *employee_fetch_result, suffixes=(bob_sfx, cmdbuild_sfx)
         )
         await asyncio.gather(
             self._create_departments_cards(
-                departments=prepared_employees_df["Department_bob"].unique()
+                departments=prepared_employees_df["o_u_title_bob"].unique()
             ),
             self._create_company_cards(
-                companies=prepared_employees_df["Company_bob"].unique()
+                companies=prepared_employees_df["company_title_bob"].unique()
             ),
+        )
+        await asyncio.gather(
             self._create_employee_card(
                 employees_df=prepared_employees_df.query(
-                    f"CardId_cmdbuild == '{EmployeeInitialContext.cmdbuild_compatible_nan}'"
+                    f"card_id_cmdbuild == '{EmployeeInterSystemsContext.cmdbuild_compatible_nan}'"
                 ),
                 suffixes=(bob_sfx, cmdbuild_sfx),
             ),
             self._update_employee_card(
                 employees_df=prepared_employees_df.query(
-                    f"CardId_cmdbuild != '{EmployeeInitialContext.cmdbuild_compatible_nan}'"
+                    f"card_id_cmdbuild != '{EmployeeInterSystemsContext.cmdbuild_compatible_nan}'"
                 ),
                 suffixes=(bob_sfx, cmdbuild_sfx),
             ),
         )
+
+    async def create_cmdb_employee(self, employee_id: str):
+        bob_employee_info: Dict = await self._get_bob_employee_by_id(employee_id)
+        employee = Employee.create_from_bob_dump(bob_employee_info)
+        cmdb_card_id: int | None = await self._get_cmdb_card_id_by_attr(
+            class_id="InternalEmployee", filter_attr="Email", attr=employee.email
+        )
+        department: str = employee.o_u_title
+        company: str = employee.company_title
+        manager_email: str = employee.email_reports_to
+        # replace company title with cmdb card id
+        if company is not None:
+            employee.company = await self._get_cmdb_card_id_by_attr(
+                class_id="Customer",
+                filter_attr="CompanyTitle",
+                attr=company,
+                data={"Description": company, "CompanyTitle": company},
+                create_if_absent=True,
+            )
+        # replace organization unit name with cmdb card id
+        if department is not None:
+            employee.o_u = await self._get_cmdb_card_id_by_attr(
+                class_id="OU",
+                filter_attr="Name",
+                attr=department,
+                data={"Name": department, "Description": department},
+                create_if_absent=True,
+            )
+        # replace employee`s manager with cmdb card id
+        if manager_email is not None:
+            employee.reports_to = await self._get_cmdb_card_id_by_attr(
+                class_id="InternalEmployee", filter_attr="Email", attr=manager_email
+            )
+        # create new employee card in cmdbuild
+        employee_dump: Dict = employee.prepare_cmdb_dump(
+            exclude_fields=["email_reports_to", "o_u_title", "company_title", "card_id"]
+        )
+        is_employee_created_manually: bool = cmdb_card_id is not None
+        if is_employee_created_manually:
+            await self._update_cmdb_card(
+                class_id="InternalEmployee",
+                data=employee_dump,
+                card_id=cmdb_card_id,
+            )
+        else:
+            await self._create_cmdb_card(
+                class_id="InternalEmployee",
+                data=employee_dump
+            )
+
+    async def update_cmdb_employee(self, employee_id, update_info: Dict):
+        # TODO add rate limit
+        bob_employee_info: Dict = await self._get_bob_employee_by_id(employee_id)
+        employee = Employee.create_from_bob_dump(bob_employee_info)
+        company_path_to_match: str = (
+            f"/work/customColumns/{self.bob_custom_company_column_id}"
+        )
+        for item_change in update_info:
+            match item_change:
+                case {"path": "/work/department", "newValue": department_name}:
+                    department_card_id: str = await self._get_cmdb_card_id_by_attr(
+                        class_id="OU",
+                        filter_attr="Name",
+                        attr=department_name,
+                        data={"Name": department_name, "Description": department_name},
+                        create_if_absent=True,
+                    )
+                    employee.Department = department_card_id
+                case {"path": company_path_to_match, "newValue": company_title}:
+                    company_card_id: str = (
+                        await self._get_cmdb_card_id_by_attr(
+                            class_id="Customer",
+                            filter_attr="CompanyTitle",
+                            attr=company_title,
+                            data={
+                                "Description": company_title,
+                                "CompanyTitle": company_title,
+                            },
+                            create_if_absent=True,
+                        ),
+                    )
+                    employee.Company = company_card_id
+                case {"path": "/work/reportsTo", "newValue": {"id": manager_code}}:
+                    manager_card_id = (
+                        await self._get_cmdb_card_id_by_attr(
+                            class_id="InternalEmployee",
+                            filter_attr="Code",
+                            attr=manager_code,
+                        ),
+                    )
+                    employee.ReportsTo = manager_card_id
+        employee_card_id = await self._get_cmdb_card_id_by_attr(
+            class_id="InternalEmployee",
+            filter_attr="Code",
+            attr=update_info["employee"]["id"],
+        )
+        await self._update_cmdb_card(
+            class_id="InternalEmployee",
+            data=employee.asdict(),
+            card_id=employee_card_id,
+        )
+
+    #########################################################################################
+    #                                   PRIVATE API                                         #
+    #########################################################################################
+
+    async def _get_cmdb_card_id_by_attr(
+        self,
+        class_id: str,
+        filter_attr: str,
+        attr: str,
+        data: Dict | None = None,
+        create_if_absent: bool = False,
+    ):
+        token = await self._get_cmdbuild_token()
+        card_payload_req = self.cmdbuild_client.build_request(
+            method="GET",
+            url=f"rest/v3/classes/{class_id}/cards",
+            params={"filter": filter_equal(filter_attr, attr)},
+            headers={"Cmdbuild-authorization": token},
+        )
+        response: httpx.Response = await self.cmdbuild_client.send(card_payload_req)
+        response.raise_for_status()
+        card_payload: Dict = response.json()
+        data: List = card_payload["data"]
+        card_id: str | None = None
+        if data:
+            card_id: str = data[0]['_id']
+        elif create_if_absent:
+            new_card_payload: Dict = await self._create_cmdb_card(
+                class_id=class_id, data=data
+            )
+            card_id = new_card_payload["data"]["_id"]
+        else:
+            self.logger.warning(
+                "Card for class %s and attribute %s:%s is not found",
+                class_id,
+                filter_attr,
+                attr,
+            )
+        return card_id
 
     async def _get_cmdbuild_token(self):
         """
@@ -205,15 +416,21 @@ class EmployeeInitialContext:
         """
         async with self.lock_cmdbuild_token:
             if self._cmdbuild_token is None:
-                self._cmdbuild_token = await generate_cmdbuild_token(
-                    url=self.cmdbuild_url,
-                    username=self.username_cmdbuild,
-                    password=self.password_cmdbuild,
-                    client=self.cmdbuild_client,
+                path: str = "rest/v3/sessions"
+                req: httpx.Request = self.cmdbuild_client.build_request(
+                    method="POST",
+                    url=path,
+                    params={"scope": "service", "returnId": True},
+                    json=self.cmdb_auth_header,
                 )
+                response: httpx.Response = await self.cmdbuild_client.send(req)
+                response.raise_for_status()
+                response_payload: Dict = response.json()
+                token: str = response_payload["data"]["_id"]
+                self._cmdbuild_token = token
             return self._cmdbuild_token
 
-    def _prepare_employees_info(
+    def _prepare_employees_info_dataframe(
         self,
         bob_employees_df: pd.DataFrame,
         cmdbuild_employees_df: pd.DataFrame,
@@ -222,7 +439,8 @@ class EmployeeInitialContext:
         """
         Combines information from hr system and cmdbuild to easily manipulate
         """
-        column_name_for_join: str = "Email"
+        bob_sfx, _cmdbuild_sfx = suffixes
+        column_name_for_join: str = "email"
         prepared_employees_df: pd.DataFrame = pd.merge(
             bob_employees_df,
             cmdbuild_employees_df,
@@ -231,170 +449,166 @@ class EmployeeInitialContext:
             suffixes=suffixes,
         )
         prepared_employees_df.fillna(
-            value=EmployeeInitialContext.cmdbuild_compatible_nan, inplace=True
+            value=EmployeeInterSystemsContext.cmdbuild_compatible_nan, inplace=True
+        )
+        prepared_employees_df.rename(
+            columns={column_name_for_join: f"{column_name_for_join}{bob_sfx}"},
+            inplace=True,
         )
         return prepared_employees_df
 
-    async def _fetch_employees_from_cmdbuild(self) -> pd.DataFrame:
+    async def _get_all_cmdb_employees_from_cmdb(self) -> pd.DataFrame:
         """
         Fetches ALL employee information from cmdbuild
         """
         requested_cards_types: Tuple[str] = ("Customer", "OU", "InternalEmployee")
         token = await self._get_cmdbuild_token()
-        fetch_employee_info_from_cmdbuild_tasks: List[Dict] = [
-            make_get_request(
-                client=self.cmdbuild_client,
-                url=f"{self.cmdbuild_url}/rest/v3/classes/{cardId}/cards",
-                headers={"Cmdbuild-authorization": token},
+        async_tasks: List[Dict] = [
+            # send a request
+            self.cmdbuild_client.send(
+                # build GET request to cmdb service
+                self.cmdbuild_client.build_request(
+                    method="GET",
+                    url=f"rest/v3/classes/{cardId}/cards",
+                    headers={"Cmdbuild-authorization": token},
+                )
             )
             for cardId in requested_cards_types
         ]
-        result: List[Dict] = await asyncio.gather(
-            *fetch_employee_info_from_cmdbuild_tasks
-        )
-        companies_info, organization_units_info, employees_info = result
-
+        results: List[httpx.Response] = await asyncio.gather(*async_tasks)
+        # raise HTTPStatusError
+        [resp.raise_for_status() for resp in results]
+        # retrive json payload from responses
+        resp_payloads: List[Dict] = [resp.json() for resp in results]
+        companies_info, organization_units_info, employees_info = resp_payloads
         # update local caches
+        # 1. employee local cache
         for card in employees_info["data"]:
-            email: str = card["Email"]
             card_id: str = card["_id"]
+            email: str = card["Email"]
             self.employee_card_id_by_email[email] = card_id
             self.employee_email_by_card_id[card_id] = email
-
+        # 2. OU local cache
         for card in organization_units_info["data"]:
             card_id: str = card["_id"]
             name: str = card["Name"]
             self.department_card_id_by_name[name] = card_id
             self.department_name_by_card_id[card_id] = name
-
+        # 3. Companies local cache
         for card in companies_info["data"]:
             card_id: str = card["_id"]
             descr: str = card["Description"]
             self.company_name_by_card_id[card_id] = descr
             self.company_card_id_by_name[descr] = card_id
-
-        cmdbuild_employees: List[self.InternalEmployee] = []
+        # prepare employee dataframe
+        cmdbuild_employees: List = []
         for employee in employees_info["data"]:
-            match employee:
-                case {
-                    "_id": card_id,
-                    "Code": code,
-                    "FirstName": first_name,
-                    "MiddleName": middle_name,
-                    "LastName": last_name,
-                    "DisplayName": display_name,
-                    "FullName": full_name,
-                    "IsManager": is_manager,
-                    "Email": email,
-                    "ReportsTo": manager_card_id,
-                    "JobTitle": job_title,
-                    "OU": department_card_id,
-                    "Company": company_card_id,
-                }:
-                    cmdbuild_employees.append(
-                        self.InternalEmployee(
-                            Code=code,
-                            FirstName=first_name,
-                            MiddleName=middle_name,
-                            LastName=last_name,
-                            DisplayName=display_name,
-                            FullName=full_name,
-                            IsManager=is_manager,
-                            Email=email,
-                            ReportsTo=self.employee_email_by_card_id.get(
-                                manager_card_id
-                            ),
-                            JobTitle=job_title,
-                            Department=self.department_name_by_card_id.get(
-                                department_card_id
-                            ),
-                            Company=self.company_name_by_card_id.get(company_card_id),
-                            CardId=card_id,
-                        )
-                    )
+            # mandatory fields
+            card_id = employee["_id"]
+            first_name = employee["FirstName"]
+            is_manager = employee["IsManager"]
+            # optional fields
+            code = employee.get("Code")
+            middle_name = employee.get("MiddleName")
+            last_name = employee.get("LastName")
+            display_name = employee.get("DisplayName")
+            full_name = employee.get("FullName")
+            email = employee.get("Email")
+            manager_card_id = employee.get("ReportsTo")
+            job_title = employee.get("JobTitle")
+            department_card_id = employee.get("OU")
+            company_card_id = employee.get("Company")
+
+            email_reports_to=self.employee_email_by_card_id.get(manager_card_id)
+            o_u_title=self.employee_email_by_card_id.get(department_card_id)
+            company_title=self.employee_email_by_card_id.get(company_card_id)
+            cmdbuild_employees.append(
+                Employee(
+                    first_name=first_name,
+                    middle_name=middle_name,
+                    last_name=last_name,
+                    display_name=display_name,
+                    full_name=full_name,
+                    is_manager=is_manager,
+                    email=email,
+                    job_title=job_title,
+                    email_reports_to=email_reports_to,
+                    o_u_title=o_u_title,
+                    company_title=company_title,
+                    code=code,
+                    card_id=card_id,
+                )
+            )
+        if not cmdbuild_employees:
+            return pd.DataFrame(columns=[field.name for field in fields(Employee)])
         return pd.DataFrame(cmdbuild_employees)
 
-    async def _fetch_employees_from_hr_system(self) -> pd.DataFrame:
+    async def _get_all_bob_employees(self) -> pd.DataFrame:
         """
         Method fetches ALL employee information from HR system (hibob)
         """
-        bob_payload = await make_get_request(
-            client=self.bob_client,
-            url=self.bob_url,
-            headers={"Accept": "application/json", "Authorization": self.bob_token},
+        req: httpx.Request = self.bob_client.build_request(
+            method="GET",
+            url="people",
+            params={"showInactive": False, "includeHumanReadable": True},
+            headers=self.bob_auth_header,
         )
-
-        bob_employees: List = []
-        for employee in bob_payload["employees"]:
-            match employee:
-                case {
-                    "work": {
-                        "reportsTo": {"email": manager_email},
-                    },
-                    "humanReadable": human_readable,
-                }:
-                    work_info: Dict = human_readable["work"]
-                    department: str = work_info.get("department")
-                    is_manager: bool = work_info.get("isManager") == "Yes"
-                    job_title: str = work_info.get("title")
-                    company: str = work_info.get("customColumns", {}).get(
-                        self.bob_custom_company_column_id
-                    )  # column id from production hibob
-                    code: str = human_readable.get("id")
-                    first_name: str = human_readable.get("firstName")
-                    middle_name: str = human_readable.get("middleName")
-                    last_name: str = human_readable.get("surname")
-                    display_name: str = human_readable.get("displayName")
-                    full_name: str = human_readable.get("fullName")
-                    email: str = human_readable.get("email")
-                    bob_employees.append(
-                        self.InternalEmployee(
-                            Code=code,
-                            FirstName=first_name,
-                            MiddleName=middle_name,
-                            LastName=last_name,
-                            DisplayName=display_name,
-                            FullName=full_name,
-                            IsManager=is_manager,
-                            Email=email,
-                            ReportsTo=manager_email,
-                            JobTitle=job_title,
-                            Department=department,
-                            Company=company,
-                        )
-                    )
+        response: httpx.Response = await self.bob_client.send(req)
+        response.raise_for_status()
+        bob_payload: Dict = response.json()
+        bob_employees: List = [
+            Employee.create_from_bob_dump(employee)
+            for employee in bob_payload["employees"]
+        ]
         return pd.DataFrame(bob_employees)
 
-    async def _update_cmdbuild_card(
-        self, data: Dict, card_id: str, class_id: str
-    ) -> int:
+    async def _get_bob_employee_by_id(self, employee_id: str) -> Dict:
+        req: httpx.Request = self.bob_client.build_request(
+            method="GET",
+            url=f"people/{employee_id}",
+            params={"includeHumanReadable": True},
+            headers=self.bob_auth_header,
+        )
+        response: httpx.Response = await self.bob_client.send(req)
+        response.raise_for_status()
+        return response.json()
+
+    async def _update_cmdb_card(self, data: Dict, card_id: str, class_id: str) -> int:
         """
         Helper method which does HTTP PUT to update existing card in cmdbuild
         """
         path: str = f"rest/v3/classes/{class_id}/cards/{card_id}"
-        url: str = f"{self.cmdbuild_url}/{path}"
         token: str = await self._get_cmdbuild_token()
-        response: httpx.Response = await self.cmdbuild_client.put(
-            headers={"Cmdbuild-authorization": token}, url=url, json=data
+        request: httpx.Request = self.cmdbuild_client.build_request(
+            method="PUT",
+            url=path,
+            json=data,
+            headers={"Cmdbuild-authorization": token}
         )
+        response: httpx.Response = await self.cmdbuild_client.send(request)
         response.raise_for_status()
         response_payload: Dict = response.json()
         assert response_payload["success"]
+        self.logger.info("Cmdb card id %s with new data %s is updated", card_id, data)
         return response_payload
 
-    async def create_cmdbuild_card(self, class_id: str, data: str) -> Dict:
+    async def _create_cmdb_card(self, class_id: str, data: str) -> Dict:
         """
         Helper method which does HTTP PUSH to create new card in cmdbuild
         """
         path: str = f"rest/v3/classes/{class_id}/cards"
-        url: str = f"{self.cmdbuild_url}/{path}"
         token: str = await self._get_cmdbuild_token()
-        response: httpx.Response = await self.cmdbuild_client.post(
-            headers={"Cmdbuild-authorization": token}, url=url, json=data
+        request: httpx.Request = self.cmdbuild_client.build_request(
+            method="POST",
+            url=path,
+            json=data,
+            headers={"Cmdbuild-authorization": token},
         )
+        response: httpx.Response = await self.cmdbuild_client.send(request)
         response.raise_for_status()
         response_payload: Dict = response.json()
         assert response_payload["success"]
+        self.logger.info("Cmdb card for class %s with data %s is created", class_id, data)
         return response_payload
 
     async def _create_company_cards(self, companies: List):
@@ -404,11 +618,11 @@ class EmployeeInitialContext:
         async_tasks: List = []
         for company in companies:
             if (
-                company != EmployeeInitialContext.cmdbuild_compatible_nan
+                company != EmployeeInterSystemsContext.cmdbuild_compatible_nan
                 and company not in self.company_card_id_by_name
             ):
                 async_tasks.append(
-                    self.create_cmdbuild_card(
+                    self._create_cmdb_card(
                         class_id="Customer",
                         data={"Description": company, "CompanyTitle": company},
                     )
@@ -430,11 +644,11 @@ class EmployeeInitialContext:
         async_tasks: List = []
         for department in departments:
             if (
-                department != EmployeeInitialContext.cmdbuild_compatible_nan
+                department != EmployeeInterSystemsContext.cmdbuild_compatible_nan
                 and department not in self.department_card_id_by_name
             ):
                 async_tasks.append(
-                    self.create_cmdbuild_card(
+                    self._create_cmdb_card(
                         class_id="OU",
                         data={"Name": department, "Description": department},
                     )
@@ -456,45 +670,55 @@ class EmployeeInitialContext:
         Updates existing employee cards in cmdbuild
         """
         bob_sfx, cmdbuild_sfx = suffixes
-        update_employees_async_tasks: List = []
-        # by comparing fields below data diff is retrieving from hr system and cmdbuild
-        fields_to_compare = [
-            (f"{field.name}{bob_sfx}", f"{field.name}{cmdbuild_sfx}")
-            for field in fields(EmployeeInitialContext.InternalEmployee)
-            if field.name not in ["Email", "CardId"]
-        ]
+        async_tasks: List = []
         for row in employees_df.itertuples():
             employee_attrs: Dict = {}
-            employee_email: str = getattr(row, "Email")
+            employee_email: str = getattr(row, f"email{bob_sfx}")
             employee_card_id: str = self.employee_card_id_by_email[employee_email]
 
-            for bob_field, cmdbuild_field in fields_to_compare:
-                bob_attr: str = getattr(row, bob_field)
-                cmdbuild_attr: str = getattr(row, cmdbuild_field)
+            for field in fields(Employee):
+                field_name: str = field.name
+                bob_attr: str = f"{field_name}{bob_sfx}"
+                cmdb_attr: str = f"{field_name}{cmdbuild_sfx}"
+                bob_value: str = getattr(row, bob_attr, None)
+                cmdbuild_value: str = getattr(row, cmdb_attr, None)
                 if (
-                    bob_attr != cmdbuild_attr
-                    and bob_attr != EmployeeInitialContext.cmdbuild_compatible_nan
+                    bob_value != EmployeeInterSystemsContext.cmdbuild_compatible_nan
+                    and bob_value != cmdbuild_value
                 ):
-                    match bob_field:
-                        case "ReportsTo_bob":
-                            value = self.employee_card_id_by_email[bob_attr]
-                        case "Department_bob":
-                            value = self.department_card_id_by_name[bob_attr]
-                        case "Company_bob":
-                            value = self.company_card_id_by_name[bob_attr]
+                    match field_name:
+                        case "email_reports_to":
+                            employee_attrs[
+                                "reports_to"
+                            ] = self.employee_card_id_by_email[bob_value]
+                        case "o_u_title":
+                            employee_attrs["OU"] = self.department_card_id_by_name[
+                                bob_value
+                            ]
+                        case "company_title":
+                            employee_attrs["company"] = self.company_card_id_by_name[
+                                bob_value
+                            ]
                         case _:
-                            value = bob_attr
-                    employee_attrs[bob_field.removesuffix(bob_sfx)] = value
-
+                            employee_attrs[field_name] = bob_value
             if employee_attrs:
-                update_employees_async_tasks.append(
-                    self._update_cmdbuild_card(
-                        data=employee_attrs,
+                employee = Employee(**employee_attrs)
+                dump = employee.prepare_cmdb_dump(
+                    exclude_fields=[
+                        "email_reports_to",
+                        "o_u_title",
+                        "company_title",
+                        "card_id",
+                    ]
+                )
+                async_tasks.append(
+                    self._update_cmdb_card(
+                        data=dump,
                         card_id=employee_card_id,
                         class_id="InternalEmployee",
                     )
                 )
-        await asyncio.gather(*update_employees_async_tasks)
+        await asyncio.gather(*async_tasks)
 
     async def _create_employee_card(
         self, employees_df: pd.DataFrame, suffixes: Tuple[str]
@@ -505,17 +729,35 @@ class EmployeeInitialContext:
         bob_sfx, _ = suffixes
         create_employees_async_tasks: List = []
         for row in employees_df.itertuples():
-            new_employee_attrs: Dict = {
-                field.name: row[f"{field.name}{bob_sfx}"]
-                for field in fields(EmployeeInitialContext.InternalEmployee)
-                # Exclude next fields:
-                # 'CardId' - is not an attribute in CMDBUILD;
-                # 'ReportsTo' - Manage card may not exist yet.
-                if field.name not in ["CardId", "ReportsTo"]
-            }
+
+            employee_attrs: Dict = {}
+            for field in fields(Employee):
+                attr_name: str = field.name
+                value = getattr(row, f"{attr_name}{bob_sfx}")
+                if value != self.cmdbuild_compatible_nan:
+                    employee_attrs[attr_name] = value
+
+            employee = Employee(**employee_attrs)
+            # replace organization unit name with card id in cmdb
+            if employee.o_u_title is not None:
+                employee.o_u = self.department_card_id_by_name[employee.o_u_title]
+            # replace company title with card id in cmdb
+            if employee.company_title is not None:
+                employee.company = self.company_card_id_by_name[employee.company_title]
+
+            dump: Dict = employee.prepare_cmdb_dump(
+                exclude_fields=[
+                    "email_reports_to",
+                    "o_u_title",
+                    "company_title",
+                    "card_id",
+                    "reports_to"
+                ]
+            )
             create_employees_async_tasks.append(
-                self.create_cmdbuild_card(
-                    class_id="InternalEmployee", data=new_employee_attrs
+                self._create_cmdb_card(
+                    class_id="InternalEmployee",
+                    data=dump,
                 )
             )
         results: List[Dict] = await asyncio.gather(*create_employees_async_tasks)
@@ -529,20 +771,19 @@ class EmployeeInitialContext:
         # set managers for the newly created employee
         set_employee_manager_async_tasks: List = []
         for row in employees_df.itertuples():
-
-            employee_email: str = row["Email"]
-            employee_card_id: str = self.employee_card_id_by_email[employee_email]
-
-            manager_email: str = row["ReportsTo_bob"]
-            manager_card_id: str = self.employee_card_id_by_email[manager_email]
-
-            set_employee_manager_async_tasks.append(
-                self._update_cmdbuild_card(
-                    data={"ReportsTo": manager_card_id},
-                    card_id=employee_card_id,
-                    class_id="InternalEmployee",
+            # employee may not has a manager
+            manager_email: str = getattr(row, "email_reports_to_bob")
+            if manager_email != self.cmdbuild_compatible_nan:
+                manager_card_id: str = self.employee_card_id_by_email[manager_email]
+                employee_email: str = getattr(row, "email_bob")
+                employee_card_id: str = self.employee_card_id_by_email[employee_email]
+                set_employee_manager_async_tasks.append(
+                    self._update_cmdb_card(
+                        data={"ReportsTo": manager_card_id},
+                        card_id=employee_card_id,
+                        class_id="InternalEmployee",
+                    )
                 )
-            )
         await asyncio.gather(*set_employee_manager_async_tasks)
 
 
