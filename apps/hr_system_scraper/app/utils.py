@@ -270,6 +270,7 @@ class EmployeeInterSystemsContext:
     async def create_cmdb_employee(self, employee_id: str):
         bob_employee_info: Dict = await self._get_bob_employee_by_id(employee_id)
         employee = Employee.create_from_bob_dump(bob_employee_info)
+        self.logger.info('[create_cmdb_employee] new employee payload: ', employee)
         cmdb_card_id: int | None = await self._get_cmdb_card_id_by_attr(
             class_id="InternalEmployee", filter_attr="Email", attr=employee.email
         )
@@ -304,6 +305,7 @@ class EmployeeInterSystemsContext:
             exclude_fields=["email_reports_to", "o_u_title", "company_title", "card_id"]
         )
         is_employee_created_manually: bool = cmdb_card_id is not None
+        self.logger.info(f'[create_cmdb_employee] add new employee dump {employee_dump}')
         if is_employee_created_manually:
             await self._update_cmdb_card(
                 class_id="InternalEmployee",
@@ -333,7 +335,7 @@ class EmployeeInterSystemsContext:
                         data={"Name": department_name, "Description": department_name},
                         create_if_absent=True,
                     )
-                    employee.Department = department_card_id
+                    employee.o_u = department_card_id
                 case {"path": company_path_to_match, "newValue": company_title}:
                     company_card_id: str = (
                         await self._get_cmdb_card_id_by_attr(
@@ -347,7 +349,7 @@ class EmployeeInterSystemsContext:
                             create_if_absent=True,
                         ),
                     )
-                    employee.Company = company_card_id
+                    employee.company = company_card_id
                 case {"path": "/work/reportsTo", "newValue": {"id": manager_code}}:
                     manager_card_id = (
                         await self._get_cmdb_card_id_by_attr(
@@ -356,7 +358,7 @@ class EmployeeInterSystemsContext:
                             attr=manager_code,
                         ),
                     )
-                    employee.ReportsTo = manager_card_id
+                    employee.reports_to = manager_card_id
         employee_card_id = await self._get_cmdb_card_id_by_attr(
             class_id="InternalEmployee",
             filter_attr="Code",
