@@ -44,6 +44,8 @@ services:
       - PASS_CMDB=${PASS_CMDB}
     ports:
        - 8080:8080
+    volumes:
+      - /var/log/hr_scraper_web_app:/logs
     labels:
       - traefik.http.routers.https.rule=Host(`${DOMAIN}`)
       - traefik.http.routers.https.entrypoints=https
