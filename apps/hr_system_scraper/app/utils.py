@@ -1,9 +1,10 @@
 import asyncio
-from multiprocessing.dummy import active_children
 import os
 import base64
 import hmac
 import hashlib
+import ssl
+from urllib.parse import urlparse
 from typing import Dict, Any, List, Tuple
 from dataclasses import dataclass, fields
 from pathlib import Path, PosixPath
@@ -22,16 +23,13 @@ def get_base_url(config: Dict, system) -> Dict:
     return sys_config["url"]["prod"]
 
 
-def get_external_systems_urls():
-    config: Dict = load_config(PROJECT_ROOT / "configs" / "base.yml")
-    cmdbuild_config: Dict = config["cmdbuild"]
-    hr_system_config: Dict = config["hr_system"]
-    cmdbuild_url: str = cmdbuild_config["url"]["debug"]
-    hr_system_url: str = hr_system_config["url"]["debug"]
-    if not config["debug"]:
-        cmdbuild_url = config["cmdbuild"]["prod"]
-        hr_system_url = config["hr_system"]["prod"]
-    return hr_system_url, cmdbuild_url
+def prepate_ssl_context(url: str) -> ssl.SSLContext:
+    parsed_url = urlparse(url)
+    port: int = int(parsed_url.port or 443)
+    cert: str = ssl.get_server_certificate(addr=(parsed_url.hostname, port))
+    context = ssl.SSLContext()
+    context.load_verify_locations(cadata=cert)
+    return context
 
 
 def filter_equal(attr, value) -> str:

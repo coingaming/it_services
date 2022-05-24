@@ -12,6 +12,7 @@ from .utils import (
     verify_signature,
     get_base_url,
     load_config,
+    prepate_ssl_context
 )
 
 
@@ -33,13 +34,14 @@ async def startup_event():
     During the startup of the app:
     1. merge employee info from hr system and cmdbuild
     2. apply all the differences between 2 systems
-    3. todo: memcache provisioning
     """
     config: Dict = load_config(PROJECT_ROOT / "configs" / "base.yml")
     employee_ctx: EmployeeInterSystemsContext = None
+    cmd_base_url: str = get_base_url(config, "cmdbuild")
+    ssl_context = prepate_ssl_context(cmd_base_url)
     async with (
         httpx.AsyncClient(
-            base_url=get_base_url(config, "cmdbuild"), verify=False
+            base_url=cmd_base_url, verify=ssl_context
         ) as cmdbuild_http_client,
         httpx.AsyncClient(
             base_url=get_base_url(config, "hr_system")
@@ -60,9 +62,11 @@ async def on_employee_created(hook_payload: Dict, response: Response):
     config: Dict = load_config(PROJECT_ROOT / "configs" / "base.yml")
     employee_ctx: EmployeeInterSystemsContext = None
     employee_id: str = hook_payload["employee"]["id"]
+    cmd_base_url: str = get_base_url(config, "cmdbuild")
+    ssl_context = prepate_ssl_context(cmd_base_url)
     async with (
         httpx.AsyncClient(
-            base_url=get_base_url(config, "cmdbuild"), verify=False
+            base_url=cmd_base_url, verify=ssl_context
         ) as cmdbuild_http_client,
         httpx.AsyncClient(
             base_url=get_base_url(config, "hr_system")
