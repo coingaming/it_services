@@ -268,7 +268,7 @@ class EmployeeInterSystemsContext:
     async def create_cmdb_employee(self, employee_id: str):
         bob_employee_info: Dict = await self._get_bob_employee_by_id(employee_id)
         employee = Employee.create_from_bob_dump(bob_employee_info)
-        self.logger.info('[create_cmdb_employee] new employee payload: ', employee)
+        self.logger.info('[create_cmdb_employee] new employee payload: %s', employee)
         cmdb_card_id: int | None = await self._get_cmdb_card_id_by_attr(
             class_id="InternalEmployee", filter_attr="Email", attr=employee.email
         )
@@ -303,7 +303,7 @@ class EmployeeInterSystemsContext:
             exclude_fields=["email_reports_to", "o_u_title", "company_title", "card_id"]
         )
         is_employee_created_manually: bool = cmdb_card_id is not None
-        self.logger.info(f'[create_cmdb_employee] add new employee dump {employee_dump}')
+        self.logger.info('[create_cmdb_employee] add new employee dump: %s', employee_dump)
         if is_employee_created_manually:
             await self._update_cmdb_card(
                 class_id="InternalEmployee",
